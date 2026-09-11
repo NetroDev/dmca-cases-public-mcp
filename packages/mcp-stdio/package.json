@@ -1,0 +1,47 @@
+{
+  "name": "@netrodev/dmca-cases-mcp",
+  "version": "1.0.0",
+  "description": "Read-only MCP server for DMCA.com case listing and lookup APIs (stdio).",
+  "mcpName": "io.github.NetroDev/dmca-cases",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "dmca-cases-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "dmca",
+    "model-context-protocol"
+  ],
+  "author": "DMCA MCP Cases",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NetroDev/dmca-cases-public-mcp.git",
+    "directory": "packages/mcp-stdio"
+  },
+  "homepage": "https://github.com/NetroDev/dmca-cases-public-mcp",
+  "bugs": {
+    "url": "https://github.com/NetroDev/dmca-cases-public-mcp/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  }
+}

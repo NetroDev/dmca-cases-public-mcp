@@ -1,0 +1,13 @@
+{
+  "name": "dmca-cases-public-mcp",
+  "displayName": "DMCA Cases MCP",
+  "version": "1.0.0",
+  "description": "Read-only DMCA.com cases MCP (listCases, listDIYCases, listComplianceCases, getCaseById).",
+  "author": {
+    "name": "DMCA MCP Cases"
+  },
+  "homepage": "https://github.com/NetroDev/dmca-cases-public-mcp",
+  "repository": "https://github.com/NetroDev/dmca-cases-public-mcp",
+  "license": "MIT",
+  "keywords": ["dmca", "mcp", "cases", "takedown"]
+}

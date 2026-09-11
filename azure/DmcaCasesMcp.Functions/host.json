@@ -1,0 +1,26 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    },
+    "logLevel": {
+      "default": "Information",
+      "DmcaCasesMcp.Functions": "Information"
+    }
+  },
+  "extensions": {
+    "mcp": {
+      "instructions": "Read-only DMCA.com cases MCP v1. Tools: listCases, listDIYCases, listComplianceCases, getCaseById. Requires DMCA_API_TOKEN app setting (sent as Token header to api.dmca.com). No create/update tools.",
+      "serverName": "dmca-cases",
+      "serverVersion": "1.0.0",
+      "encryptClientState": true,
+      "system": {
+        "webhookAuthorizationLevel": "System"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.npm/
+.DS_Store
+bin/
+obj/
+.vs/
+.vscode/
+local.settings.json
+*.user
+*.swp
+.env
+.env.*
+!.env.example
