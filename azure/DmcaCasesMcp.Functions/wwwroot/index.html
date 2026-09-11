@@ -24,7 +24,7 @@
   <meta name="twitter:description" content="DMCA.com Cases MCP is up and running (beta). Company of record: DMCA.com." />
   <meta name="twitter:image" content="https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/dmca-logo.png" />
 
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.png" type="image/png" />
 
   <script type="application/ld+json">
   {
@@ -328,8 +328,21 @@
       }
     }
 
-    .logo-link { display:inline-flex; align-items:center; line-height:0; }
-    .logo-svg { height:48px; width:auto; display:block; }
+    .logo-link {
+      display: inline-flex; align-items: center; line-height: 0;
+      padding: 0.35rem 0.55rem; border-radius: 10px;
+      background: #000; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo {
+      height: 40px; width: auto; display: block;
+      image-rendering: -webkit-optimize-contrast;
+    }
+    .brand-name {
+      color: var(--text);
+      font-weight: 700; letter-spacing: 0.02em;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .brand-name .badge-beta { flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -346,27 +359,7 @@
       <header>
         <div class="brand">
           <a href="https://www.dmca.com/" rel="noopener noreferrer" title="DMCA.com — main site" class="logo-link">
-          <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 601 189" width="601" height="189" role="img" aria-label="DMCA.com">
-  <title>DMCA.com</title>
-  <g fill="none" fill-rule="evenodd">
-    <g transform="translate(18,22)">
-      <path d="M36 52 V34 C36 15.2 51.2 0 70 0 C88.8 0 104 15.2 104 34 V52" stroke="#68B840" stroke-width="22" stroke-linecap="round"/>
-      <rect x="8" y="48" width="124" height="104" rx="22" ry="22" fill="#68B840"/>
-      <path fill="#000000" d="M70 78c-9.4 0-17 7.6-17 17 0 5.4 2.5 10.2 6.4 13.4L50 140h40l-9.4-31.6c3.9-3.2 6.4-8 6.4-13.4 0-9.4-7.6-17-17-17z"/>
-    </g>
-    <g fill="#201820">
-      <path d="M168 44h52c34 0 58 22 58 50.5S254 145 220 145h-52V44zm36 28v45h16c16 0 26-10 26-22.5S236 72 220 72h-16z"/>
-      <path d="M292 145V44h32l30 58 30-58h32v101h-30V88l-26 50h-12l-26-50v57h-30z"/>
-      <circle cx="448" cy="94.5" r="52" stroke="#201820" stroke-width="14" fill="none"/>
-      <path d="M470 70.5c-6-8.5-16-14-28-14-22 0-38 16.5-38 38s16 38 38 38c12 0 22-5.5 28-14l-18-12c-3 4-7.5 6.5-12.5 6.5-10 0-17-8-17-18.5s7-18.5 17-18.5c5 0 9.5 2.5 12.5 6.5l18-12z"/>
-      <path d="M508 145l38-101h34l38 101h-32l-6-18h-34l-6 18h-32zm48-42h22l-11-32-11 32z"/>
-    </g>
-    <g fill="#201820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="28">
-      <text transform="translate(590,150) rotate(-90)" text-anchor="start">.com</text>
-    </g>
-  </g>
-</svg>
-
+          <img src="/dmca-logo.png" width="180" height="57" alt="DMCA.com" class="logo" decoding="async" />
         </a>
           <div class="brand-name">Cases MCP <span class="badge-beta">Beta</span></div>
         </div>
