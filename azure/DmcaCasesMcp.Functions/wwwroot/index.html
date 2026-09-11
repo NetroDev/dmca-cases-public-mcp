@@ -24,9 +24,9 @@
   <meta name="twitter:description" content="DMCA.com Cases MCP is up and running (beta). Company of record: DMCA.com." />
   <meta name="twitter:image" content="https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/dmca-logo.png" />
 
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+  <link rel="icon" href="/favicon.ico?v=4" sizes="any" />
+  <link rel="icon" type="image/png" href="/favicon.png?v=4" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" sizes="180x180" />
 
   <script type="application/ld+json">
   {
@@ -128,12 +128,11 @@
     .brand { display: flex; align-items: center; gap: 0.9rem; min-width: 0; }
     .logo-link {
       display: inline-flex; align-items: center; line-height: 0;
-      padding: 0.55rem 0.75rem; border-radius: 12px;
-      background: #ffffff; border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 0 0 1px rgba(104,184,64,0.12);
+      padding: 0; border-radius: 0;
+      background: transparent; border: 0; box-shadow: none;
     }
     .logo {
-      height: 52px; width: auto; display: block;
+      height: 44px; width: auto; display: block;
       image-rendering: -webkit-optimize-contrast;
     }
     .brand-name {
@@ -293,7 +292,7 @@
     }
 
     @media (max-width: 640px) {
-      .logo { height: 42px; }
+      .logo { height: 36px; }
       header { flex-direction: column; align-items: flex-start; }
     }
 
@@ -312,7 +311,7 @@
       <header>
         <div class="brand">
           <a href="https://www.dmca.com/" rel="noopener noreferrer" title="DMCA.com — main site" class="logo-link">
-            <img src="/dmca-logo.png" width="200" height="63" alt="DMCA.com" class="logo" decoding="async" />
+            <img src="/dmca-logo.png?v=4" width="180" height="57" alt="DMCA.com" class="logo" decoding="async" />
           </a>
           <div class="brand-name">Cases MCP <span class="badge-beta">Beta</span></div>
         </div>
