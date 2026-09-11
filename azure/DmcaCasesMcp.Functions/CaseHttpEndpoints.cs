@@ -22,25 +22,25 @@ public sealed class CaseHttpEndpoints
 
     [Function("HttpListCases")]
     public Task<HttpResponseData> ListCases(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "listCases")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/listCases")] HttpRequestData req,
         CancellationToken ct)
         => ProxyGet(req, "/listCases", CopyQuery(req, "page"), ct);
 
     [Function("HttpListDiyCases")]
     public Task<HttpResponseData> ListDiyCases(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "listDIYCases")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/listDIYCases")] HttpRequestData req,
         CancellationToken ct)
         => ProxyGet(req, "/listDIYCases", CopyQuery(req, "page"), ct);
 
     [Function("HttpListComplianceCases")]
     public Task<HttpResponseData> ListComplianceCases(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "listComplianceCases")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/listComplianceCases")] HttpRequestData req,
         CancellationToken ct)
         => ProxyGet(req, "/listComplianceCases", CopyQuery(req, "page"), ct);
 
     [Function("HttpGetCaseById")]
     public async Task<HttpResponseData> GetCaseById(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "getCaseById")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/getCaseById")] HttpRequestData req,
         CancellationToken ct)
     {
         var id = GetQuery(req, "id");
@@ -59,7 +59,7 @@ public sealed class CaseHttpEndpoints
 
     [Function("HttpLogin")]
     public async Task<HttpResponseData> Login(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "login")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/login")] HttpRequestData req,
         CancellationToken ct)
     {
         using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
@@ -78,7 +78,7 @@ public sealed class CaseHttpEndpoints
 
     [Function("HttpCreateCase")]
     public async Task<HttpResponseData> CreateCase(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "createCase")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/createCase")] HttpRequestData req,
         CancellationToken ct)
     {
         using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
@@ -104,7 +104,7 @@ public sealed class CaseHttpEndpoints
 
     [Function("HttpUpdateCase")]
     public async Task<HttpResponseData> UpdateCase(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "updateCase")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/updateCase")] HttpRequestData req,
         CancellationToken ct)
     {
         using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
@@ -143,7 +143,7 @@ public sealed class CaseHttpEndpoints
     /// </summary>
     [Function("HttpMcpInfo")]
     public async Task<HttpResponseData> McpInfo(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "mcp")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "api/mcp")] HttpRequestData req,
         CancellationToken ct)
     {
         var res = req.CreateResponse(HttpStatusCode.OK);

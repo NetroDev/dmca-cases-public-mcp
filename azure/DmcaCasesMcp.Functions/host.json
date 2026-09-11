@@ -21,6 +21,9 @@
       "system": {
         "webhookAuthorizationLevel": "System"
       }
+    },
+    "http": {
+      "routePrefix": ""
     }
   }
 }
