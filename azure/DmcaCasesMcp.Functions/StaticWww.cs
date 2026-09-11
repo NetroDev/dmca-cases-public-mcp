@@ -4,7 +4,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DmcaCasesMcp.Functions;
 
-/// <summary>Serves brand logo assets from wwwroot.</summary>
+/// <summary>Serves brand logo and favicon assets from wwwroot.</summary>
 public sealed class StaticWww
 {
     [Function("DmcaLogoSvg")]
@@ -19,24 +19,17 @@ public sealed class StaticWww
         CancellationToken ct)
         => Serve(req, "dmca-logo.png", "image/png", ct);
 
-    [Function("FaviconSvg")]
-    public Task<HttpResponseData> FaviconSvg(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "favicon.svg")] HttpRequestData req,
-        CancellationToken ct)
-        => Serve(req, "dmca-logo.svg", "image/svg+xml; charset=utf-8", ct);
-
-    [Function("FaviconPng")]
-    public Task<HttpResponseData> FaviconPng(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "favicon.png")] HttpRequestData req,
-        CancellationToken ct)
-        => Serve(req, "dmca-logo.png", "image/png", ct);
-
-
     [Function("FaviconIco")]
     public Task<HttpResponseData> FaviconIco(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "favicon.ico")] HttpRequestData req,
         CancellationToken ct)
         => Serve(req, "favicon.ico", "image/x-icon", ct);
+
+    [Function("FaviconPng")]
+    public Task<HttpResponseData> FaviconPng(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "favicon.png")] HttpRequestData req,
+        CancellationToken ct)
+        => Serve(req, "favicon.png", "image/png", ct);
 
     [Function("AppleTouchIcon")]
     public Task<HttpResponseData> AppleTouchIcon(
