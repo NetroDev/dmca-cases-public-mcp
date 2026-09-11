@@ -31,6 +31,19 @@ public sealed class StaticWww
         CancellationToken ct)
         => Serve(req, "dmca-logo.png", "image/png", ct);
 
+
+    [Function("FaviconIco")]
+    public Task<HttpResponseData> FaviconIco(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "favicon.ico")] HttpRequestData req,
+        CancellationToken ct)
+        => Serve(req, "favicon.ico", "image/x-icon", ct);
+
+    [Function("AppleTouchIcon")]
+    public Task<HttpResponseData> AppleTouchIcon(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "apple-touch-icon.png")] HttpRequestData req,
+        CancellationToken ct)
+        => Serve(req, "apple-touch-icon.png", "image/png", ct);
+
     private static async Task<HttpResponseData> Serve(HttpRequestData req, string file, string contentType, CancellationToken ct)
     {
         var candidates = new[]
