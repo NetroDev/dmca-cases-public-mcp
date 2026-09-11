@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace DmcaCasesMcp.Functions;
 
 /// <summary>
-/// Honest 1:1 HTTP mirrors of the four read tools under /api/...
+/// Honest 1:1 HTTP mirrors of MCP tools under /api/...
 /// Useful for curl/health checks; MCP clients should prefer /runtime/webhooks/mcp.
 /// </summary>
 public sealed class CaseHttpEndpoints
@@ -56,6 +56,87 @@ public sealed class CaseHttpEndpoints
             .ConfigureAwait(false);
     }
 
+
+    [Function("HttpLogin")]
+    public async Task<HttpResponseData> Login(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "login")] HttpRequestData req,
+        CancellationToken ct)
+    {
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
+        var root = doc.RootElement;
+        var email = root.TryGetProperty("email", out var e) ? e.GetString() : null;
+        var password = root.TryGetProperty("password", out var pw) ? pw.GetString() : null;
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+            bad.Headers.Add("Content-Type", "application/json");
+            await bad.WriteStringAsync("{\"error\":\"email and password are required\"}", ct).ConfigureAwait(false);
+            return bad;
+        }
+        return await ProxyPost(req, "/login", new { email, password }, withToken: false, ct).ConfigureAwait(false);
+    }
+
+    [Function("HttpCreateCase")]
+    public async Task<HttpResponseData> CreateCase(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "createCase")] HttpRequestData req,
+        CancellationToken ct)
+    {
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
+        var root = doc.RootElement;
+        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
+        var subject = Get("subject");
+        var description = Get("description");
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description))
+        {
+            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+            bad.Headers.Add("Content-Type", "application/json");
+            await bad.WriteStringAsync("{\"error\":\"subject and description are required\"}", ct).ConfigureAwait(false);
+            return bad;
+        }
+        var payload = new Dictionary<string, object?> { ["subject"] = subject, ["description"] = description };
+        foreach (var k in new[] { "copiedFromUrl", "infringingUrl", "infringingSiteIp" })
+        {
+            var v = Get(k);
+            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
+        }
+        return await ProxyPost(req, "/createCase", payload, withToken: true, ct).ConfigureAwait(false);
+    }
+
+    [Function("HttpUpdateCase")]
+    public async Task<HttpResponseData> UpdateCase(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "updateCase")] HttpRequestData req,
+        CancellationToken ct)
+    {
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
+        var root = doc.RootElement;
+        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
+        var caseId = Get("case_id");
+        var status = Get("status");
+        var subject = Get("subject");
+        var description = Get("description");
+        if (string.IsNullOrWhiteSpace(caseId) || string.IsNullOrWhiteSpace(status)
+            || string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description))
+        {
+            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+            bad.Headers.Add("Content-Type", "application/json");
+            await bad.WriteStringAsync("{\"error\":\"case_id, status, subject, and description are required\"}", ct).ConfigureAwait(false);
+            return bad;
+        }
+        var payload = new Dictionary<string, object?>
+        {
+            ["case_id"] = caseId,
+            ["status"] = status,
+            ["subject"] = subject,
+            ["description"] = description,
+        };
+        foreach (var k in new[] { "copiedFromUrl", "infringingUrl", "infringingSiteIp", "priority" })
+        {
+            var v = Get(k);
+            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
+        }
+        return await ProxyPost(req, "/updateCase", payload, withToken: true, ct).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Documented MCP entrypoint pointer (not a full streamable-http implementation).
     /// Clients should connect to /runtime/webhooks/mcp provided by the Functions MCP extension.
@@ -70,15 +151,18 @@ public sealed class CaseHttpEndpoints
         const string body = """
         {
           "name": "dmca-cases",
-          "version": "1.0.0",
-          "policy": "read-only-v1",
+          "version": "1.1.0",
+          "policy": "list-get-plus-login-create-update",
           "mcpStreamableHttp": "/runtime/webhooks/mcp",
           "mcpSse": "/runtime/webhooks/mcp/sse",
           "httpToolMirrors": [
             "/api/listCases",
             "/api/listDIYCases",
             "/api/listComplianceCases",
-            "/api/getCaseById"
+            "/api/getCaseById",
+            "/api/login",
+            "/api/createCase",
+            "/api/updateCase"
           ],
           "note": "Use Microsoft.Azure.Functions.Worker.Extensions.Mcp Streamable HTTP at /runtime/webhooks/mcp. Pass x-functions-key with the mcp_extension system key unless webhookAuthorizationLevel is Anonymous."
         }
@@ -96,6 +180,41 @@ public sealed class CaseHttpEndpoints
         try
         {
             var json = await _client.GetRawAsync(path, query, ct).ConfigureAwait(false);
+            var ok = req.CreateResponse(HttpStatusCode.OK);
+            ok.Headers.Add("Content-Type", "application/json");
+            await ok.WriteStringAsync(json, ct).ConfigureAwait(false);
+            return ok;
+        }
+        catch (DmcaApiException ex)
+        {
+            _logger.LogWarning("Upstream error {Path} HTTP {Status}", path, ex.StatusCode);
+            var res = req.CreateResponse((HttpStatusCode)ex.StatusCode);
+            res.Headers.Add("Content-Type", "application/json");
+            await res.WriteStringAsync(ex.ResponseBody, ct).ConfigureAwait(false);
+            return res;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Proxy failure for {Path}", path);
+            var res = req.CreateResponse(HttpStatusCode.InternalServerError);
+            res.Headers.Add("Content-Type", "application/json");
+            await res.WriteStringAsync($"{{\"error\":{System.Text.Json.JsonSerializer.Serialize(ex.Message)}}}", ct)
+                .ConfigureAwait(false);
+            return res;
+        }
+    }
+
+
+    private async Task<HttpResponseData> ProxyPost(
+        HttpRequestData req,
+        string path,
+        object payload,
+        bool withToken,
+        CancellationToken ct)
+    {
+        try
+        {
+            var json = await _client.PostRawAsync(path, payload, withToken, ct).ConfigureAwait(false);
             var ok = req.CreateResponse(HttpStatusCode.OK);
             ok.Headers.Add("Content-Type", "application/json");
             await ok.WriteStringAsync(json, ct).ConfigureAwait(false);

@@ -13,3 +13,8 @@ local.settings.json
 .env
 .env.*
 !.env.example
+
+# local secrets (never commit)
+/workspace/secrets/
+*.publishsettings
+secrets/

@@ -78,3 +78,16 @@ See `server.json` for official MCP Registry (`packages` + Azure `remotes`).
 ## Cursor plugin scaffolding
 
 See `mcp.json` and `.cursor-plugin/plugin.json` for a future Marketplace submit.
+
+## Auto-deploy (GitHub Actions → Azure)
+
+Workflow: `.github/workflows/azure-functions-deploy.yml`
+
+On push to `main` (paths under `azure/DmcaCasesMcp.Functions/**`), GitHub Actions builds the .NET 8 Isolated project and deploys to Function App **dmca-cases-public-mcp**.
+
+Required repo secret:
+
+1. Azure Portal → Function App `dmca-cases-public-mcp` → **Get publish profile**
+2. GitHub → Settings → Secrets and variables → Actions → `AZURE_FUNCTIONAPP_PUBLISH_PROFILE`
+
+Also set Function App setting `DMCA_API_TOKEN` in Azure (not in GitHub) for live API calls.

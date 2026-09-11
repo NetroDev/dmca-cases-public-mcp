@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -6,8 +7,8 @@ using Microsoft.Extensions.Logging;
 namespace DmcaCasesMcp.Functions;
 
 /// <summary>
-/// Thin read-only client for https://api.dmca.com case GET endpoints.
-/// Token is never logged.
+/// Thin client for https://api.dmca.com case GET/POST endpoints.
+/// Tokens and passwords are never logged.
 /// </summary>
 public sealed class DmcaApiClient
 {
@@ -57,7 +58,41 @@ public sealed class DmcaApiClient
 
         if (!res.IsSuccessStatusCode)
         {
-            // Do not include token. Body may contain account data — return to caller as JSON error envelope.
+            var envelope = JsonSerializer.Serialize(new
+            {
+                error = $"DMCA API {path} returned HTTP {(int)res.StatusCode}",
+                status = (int)res.StatusCode,
+                body = TryParseJson(body)
+            });
+            throw new DmcaApiException((int)res.StatusCode, envelope);
+        }
+
+        return string.IsNullOrWhiteSpace(body) ? "null" : body;
+    }
+
+    /// <summary>
+    /// POST JSON. When withToken is true, sends Token header from app settings.
+    /// Never logs request body (may contain password) or token values.
+    /// </summary>
+    public async Task<string> PostRawAsync(string path, object payload, bool withToken = true, CancellationToken ct = default)
+    {
+        var uri = BuildUri(path, null);
+        using var req = new HttpRequestMessage(HttpMethod.Post, uri);
+        if (withToken)
+        {
+            req.Headers.TryAddWithoutValidation("Token", ResolveToken());
+        }
+
+        var json = JsonSerializer.Serialize(payload);
+        req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        _logger.LogInformation("DMCA POST {Path}", path);
+
+        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
+        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+        if (!res.IsSuccessStatusCode)
+        {
             var envelope = JsonSerializer.Serialize(new
             {
                 error = $"DMCA API {path} returned HTTP {(int)res.StatusCode}",

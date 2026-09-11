@@ -14,7 +14,6 @@ builder.Services
 
 builder.Services.AddHttpClient<DmcaApiClient>();
 
-// Optional: declare MCP tool property metadata for tools that use ConfigureMcpTool.
 builder
     .ConfigureMcpTool("listCases")
     .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false);
@@ -30,5 +29,29 @@ builder
 builder
     .ConfigureMcpTool("getCaseById")
     .WithProperty("id", "string", "Case ID returned by listCases (or equivalent).", required: true);
+
+builder
+    .ConfigureMcpTool("login")
+    .WithProperty("email", "string", "DMCA.com account email.", required: true)
+    .WithProperty("password", "string", "DMCA.com account password. Never logged.", required: true);
+
+builder
+    .ConfigureMcpTool("createCase")
+    .WithProperty("subject", "string", "Case subject.", required: true)
+    .WithProperty("description", "string", "Case description.", required: true)
+    .WithProperty("copiedFromUrl", "string", "Optional original / copied-from URL.", required: false)
+    .WithProperty("infringingUrl", "string", "Optional infringing URL.", required: false)
+    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false);
+
+builder
+    .ConfigureMcpTool("updateCase")
+    .WithProperty("case_id", "string", "Case ID to update.", required: true)
+    .WithProperty("status", "string", "Case status.", required: true)
+    .WithProperty("subject", "string", "Case subject.", required: true)
+    .WithProperty("description", "string", "Case description.", required: true)
+    .WithProperty("copiedFromUrl", "string", "Optional original / copied-from URL.", required: false)
+    .WithProperty("infringingUrl", "string", "Optional infringing URL.", required: false)
+    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false)
+    .WithProperty("priority", "string", "Optional priority.", required: false);
 
 builder.Build().Run();

@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * DMCA Cases public MCP (stdio) — read-only v1.
- * Tools map 1:1 to documented GET endpoints on https://api.dmca.com.
- * No create/update/login/register tools.
+ * DMCA Cases public MCP (stdio) — list/get + login/createCase/updateCase.
+ * Tools map 1:1 to documented endpoints on https://api.dmca.com.
+ * Passwords and tokens are never logged.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { dmcaGet } from "./dmcaClient.js";
+import { dmcaGet, dmcaLogin, dmcaPost } from "./dmcaClient.js";
 
 const SERVER_NAME = "dmca-cases";
-const SERVER_VERSION = "1.0.0";
+const SERVER_VERSION = "1.1.0";
 
 function jsonResult(data: unknown) {
   return {
@@ -129,12 +129,113 @@ function createServer(): McpServer {
     }
   );
 
+  server.tool(
+    "login",
+    "POST https://api.dmca.com/login — authenticate with email/password (no Token header). Returns upstream JSON (may include a token). Password is never logged.",
+    {
+      email: z.string().min(1).describe("DMCA.com account email."),
+      password: z.string().min(1).describe("DMCA.com account password. Never logged."),
+    },
+    async ({ email, password }) => {
+      try {
+        const data = await dmcaLogin(email, password);
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "createCase",
+    "POST https://api.dmca.com/createCase — create a managed takedown case. Requires Token (DMCA_API_TOKEN).",
+    {
+      subject: z.string().min(1).describe("Case subject."),
+      description: z.string().min(1).describe("Case description."),
+      copiedFromUrl: z
+        .string()
+        .optional()
+        .describe("Optional original / copied-from URL."),
+      infringingUrl: z
+        .string()
+        .optional()
+        .describe("Optional infringing URL."),
+      infringingSiteIp: z
+        .string()
+        .optional()
+        .describe("Optional infringing site IP."),
+    },
+    async ({ subject, description, copiedFromUrl, infringingUrl, infringingSiteIp }) => {
+      try {
+        const payload: Record<string, unknown> = { subject, description };
+        if (copiedFromUrl) payload.copiedFromUrl = copiedFromUrl;
+        if (infringingUrl) payload.infringingUrl = infringingUrl;
+        if (infringingSiteIp) payload.infringingSiteIp = infringingSiteIp;
+        const data = await dmcaPost("/createCase", payload, { withToken: true });
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "updateCase",
+    "POST https://api.dmca.com/updateCase — update an existing managed takedown case. Requires Token (DMCA_API_TOKEN).",
+    {
+      case_id: z.string().min(1).describe("Case ID to update."),
+      status: z.string().min(1).describe("Case status."),
+      subject: z.string().min(1).describe("Case subject."),
+      description: z.string().min(1).describe("Case description."),
+      copiedFromUrl: z
+        .string()
+        .optional()
+        .describe("Optional original / copied-from URL."),
+      infringingUrl: z
+        .string()
+        .optional()
+        .describe("Optional infringing URL."),
+      infringingSiteIp: z
+        .string()
+        .optional()
+        .describe("Optional infringing site IP."),
+      priority: z.string().optional().describe("Optional priority."),
+    },
+    async ({
+      case_id,
+      status,
+      subject,
+      description,
+      copiedFromUrl,
+      infringingUrl,
+      infringingSiteIp,
+      priority,
+    }) => {
+      try {
+        const payload: Record<string, unknown> = {
+          case_id,
+          status,
+          subject,
+          description,
+        };
+        if (copiedFromUrl) payload.copiedFromUrl = copiedFromUrl;
+        if (infringingUrl) payload.infringingUrl = infringingUrl;
+        if (infringingSiteIp) payload.infringingSiteIp = infringingSiteIp;
+        if (priority) payload.priority = priority;
+        const data = await dmcaPost("/updateCase", payload, { withToken: true });
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
   return server;
 }
 
 async function main(): Promise<void> {
   // Never write protocol traffic to stdout; use stderr for diagnostics only.
-  // Do not log tokens or env secret values.
+  // Do not log tokens, passwords, or env secret values.
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
