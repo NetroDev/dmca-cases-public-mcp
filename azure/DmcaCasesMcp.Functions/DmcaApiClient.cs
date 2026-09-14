@@ -43,6 +43,10 @@ public sealed class DmcaApiClient
         return token.Trim();
     }
 
+    /// <summary>
+    /// GET a DMCA.com path. <paramref name="path"/> may include path segments
+    /// (e.g. <c>/getSiteReport/{domain}</c>); optional <paramref name="query"/> is appended as query string.
+    /// </summary>
     public async Task<string> GetRawAsync(string path, IDictionary<string, string?>? query = null, CancellationToken ct = default)
     {
         var token = ResolveToken();

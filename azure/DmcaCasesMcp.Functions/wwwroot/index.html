@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DMCA.com Cases MCP server. (beta)</title>
-  <meta name="description" content="DMCA.com Cases MCP server is up and running (beta). Protect copyright and IP — list, get, create, and update DMCA takedown cases from AI agents. Company of record: DMCA.com." />
+  <meta name="description" content="DMCA.com Cases MCP server is up and running (beta). Protect copyright and IP — list, get, create DIY/compliance cases, update, and site reports from AI agents. Company of record: DMCA.com." />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta name="author" content="DMCA.com" />
   <meta name="keywords" content="DMCA, copyright, intellectual property, IP protection, MCP, takedown, cases API, DMCA.com" />
@@ -14,14 +14,14 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="DMCA.com" />
   <meta property="og:title" content="DMCA Cases MCP — Copyright &amp; IP Protection for AI Agents" />
-  <meta property="og:description" content="DMCA.com Cases MCP — list, get, createCase, and updateCase for AI agents via Model Context Protocol." />
+  <meta property="og:description" content="DMCA.com Cases MCP — list, get, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport for AI agents via Model Context Protocol." />
   <meta property="og:url" content="https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/" />
   <meta property="og:image" content="https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/dmca-logo.png" />
   <meta property="og:locale" content="en_US" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="DMCA Cases MCP — Copyright &amp; IP for AI Agents" />
-  <meta name="twitter:description" content="DMCA.com Cases MCP (beta): list, get, createCase, updateCase. MCP Server of record for DMCA.com." />
+  <meta name="twitter:description" content="DMCA.com Cases MCP (beta): list, get, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport. MCP Server of record for DMCA.com." />
   <meta name="twitter:image" content="https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/dmca-logo.png" />
 
   <link rel="icon" href="/favicon.ico?v=5" sizes="any" />
@@ -47,7 +47,7 @@
       {
         "@type": "WebAPI",
         "name": "DMCA Cases MCP",
-        "description": "Model Context Protocol server for DMCA.com copyright takedown cases (list, get, create, update).",
+        "description": "Model Context Protocol server for DMCA.com copyright takedown cases (list, get, create, DIY, compliance, site report, update).",
         "documentation": "https://www.dmca.com/api/",
         "provider": {
           "@type": "Organization",
@@ -361,7 +361,10 @@
               <li><code>listCases</code> · DIY · Compliance</li>
               <li><code>getCaseById</code></li>
               <li><strong><code>createCase</code></strong> — file a managed takedown</li>
+              <li><strong><code>createDIYCase</code></strong> — file a DIY case</li>
+              <li><strong><code>createComplianceCase</code></strong> — file a compliance case</li>
               <li><strong><code>updateCase</code></strong> — update case status / fields</li>
+              <li><code>getSiteReport</code> — site report by domain</li>
             </ul>
           </article>
           <article class="card">

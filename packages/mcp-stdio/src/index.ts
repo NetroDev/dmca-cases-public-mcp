@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DMCA Cases public MCP (stdio) — list/get + login/createCase/updateCase.
+ * DMCA Cases public MCP (stdio) — list/get + login/createCase/createDIYCase/createComplianceCase/updateCase/getSiteReport.
  * Tools map 1:1 to documented endpoints on https://api.dmca.com.
  * Passwords and tokens are never logged.
  */
@@ -10,7 +10,7 @@ import { z } from "zod";
 import { dmcaGet, dmcaLogin, dmcaPost } from "./dmcaClient.js";
 
 const SERVER_NAME = "dmca-cases";
-const SERVER_VERSION = "1.1.0";
+const SERVER_VERSION = "1.2.0";
 
 function jsonResult(data: unknown) {
   return {
@@ -223,6 +223,126 @@ function createServer(): McpServer {
         if (infringingSiteIp) payload.infringingSiteIp = infringingSiteIp;
         if (priority) payload.priority = priority;
         const data = await dmcaPost("/updateCase", payload, { withToken: true });
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+
+  server.tool(
+    "createDIYCase",
+    "POST https://api.dmca.com/createDIYCase — create a DIY case. Requires Token (DMCA_API_TOKEN).",
+    {
+      subject: z.string().min(1).describe("Case subject."),
+      description: z.string().min(1).describe("Case description."),
+      type: z
+        .string()
+        .min(1)
+        .describe(
+          "DIY case type: Business - General | Personal - General | Toolkit Business Request CAN|EU|India | Toolkit Personal Request CAN|EU|India."
+        ),
+      copiedFromUrl: z
+        .string()
+        .optional()
+        .describe("Optional original / copied-from URL."),
+      infringingUrl: z
+        .string()
+        .optional()
+        .describe("Optional infringing URL."),
+      infringingSiteIp: z
+        .string()
+        .optional()
+        .describe("Optional infringing site IP."),
+    },
+    async ({ subject, description, type, copiedFromUrl, infringingUrl, infringingSiteIp }) => {
+      try {
+        const payload: Record<string, unknown> = { subject, description, type };
+        if (copiedFromUrl) payload.copiedFromUrl = copiedFromUrl;
+        if (infringingUrl) payload.infringingUrl = infringingUrl;
+        if (infringingSiteIp) payload.infringingSiteIp = infringingSiteIp;
+        const data = await dmcaPost("/createDIYCase", payload, { withToken: true });
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "createComplianceCase",
+    "POST https://api.dmca.com/createComplianceCase — create a compliance case. Requires Token. siteId site owner must have feature enabled.",
+    {
+      submitterEmail: z.string().min(1).describe("Submitter email."),
+      submitterFirstName: z.string().min(1).describe("Submitter first name."),
+      submitterLastName: z.string().min(1).describe("Submitter last name."),
+      description: z.string().min(1).describe("Case description."),
+      siteId: z
+        .string()
+        .min(1)
+        .describe("Id of the site the case is submitted to (site owner must have feature enabled)."),
+      submitterCompanyName: z
+        .string()
+        .optional()
+        .describe("Optional submitter company name."),
+      copiedFromUrl: z
+        .string()
+        .optional()
+        .describe("Optional original / copied-from URL."),
+      infringingUrl: z
+        .string()
+        .optional()
+        .describe("Optional infringing URL."),
+      infringingSiteIp: z
+        .string()
+        .optional()
+        .describe("Optional infringing site IP."),
+    },
+    async ({
+      submitterEmail,
+      submitterFirstName,
+      submitterLastName,
+      description,
+      siteId,
+      submitterCompanyName,
+      copiedFromUrl,
+      infringingUrl,
+      infringingSiteIp,
+    }) => {
+      try {
+        const payload: Record<string, unknown> = {
+          submitterEmail,
+          submitterFirstName,
+          submitterLastName,
+          description,
+          siteId,
+        };
+        if (submitterCompanyName) payload.submitterCompanyName = submitterCompanyName;
+        if (copiedFromUrl) payload.copiedFromUrl = copiedFromUrl;
+        if (infringingUrl) payload.infringingUrl = infringingUrl;
+        if (infringingSiteIp) payload.infringingSiteIp = infringingSiteIp;
+        const data = await dmcaPost("/createComplianceCase", payload, { withToken: true });
+        return jsonResult(data);
+      } catch (err) {
+        return errorResult(err);
+      }
+    }
+  );
+
+  server.tool(
+    "getSiteReport",
+    "GET https://api.dmca.com/getSiteReport/{domain} — site report for a fully qualified domain name. Requires Token (DMCA_API_TOKEN).",
+    {
+      domain: z
+        .string()
+        .min(1)
+        .describe("Fully qualified domain name (upstream path segment)."),
+    },
+    async ({ domain }) => {
+      try {
+        const path = `/getSiteReport/${encodeURIComponent(domain.trim())}`;
+        const data = await dmcaGet(path);
         return jsonResult(data);
       } catch (err) {
         return errorResult(err);

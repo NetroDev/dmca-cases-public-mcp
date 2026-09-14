@@ -1,6 +1,6 @@
 # DmcaCasesMcp.Functions
 
-.NET 8 Isolated Azure Functions host for the DMCA Cases MCP (list/get plus login, createCase, updateCase).
+.NET 8 Isolated Azure Functions host for the DMCA Cases MCP (list/get plus login, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport).
 
 ## Config
 
@@ -12,7 +12,7 @@
 - MCP SSE: `/runtime/webhooks/mcp/sse`
 - Info: `GET /api/mcp`
 - Cover: `GET /cover`
-- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`
+- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (calls upstream `/getSiteReport/{domain}`)
 
 ## Deploy (code, not container)
 

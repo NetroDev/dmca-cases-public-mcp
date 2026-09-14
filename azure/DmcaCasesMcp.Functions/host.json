@@ -14,9 +14,9 @@
   },
   "extensions": {
     "mcp": {
-      "instructions": "DMCA.com cases MCP. Tools: login, listCases, listDIYCases, listComplianceCases, getCaseById, createCase, updateCase. Requires DMCA_API_TOKEN app setting (sent as Token header to api.dmca.com) for create/update and most reads.",
+      "instructions": "DMCA.com cases MCP. Tools: login, listCases, listDIYCases, listComplianceCases, getCaseById, createCase, updateCase, createDIYCase, createComplianceCase, getSiteReport. Requires DMCA_API_TOKEN app setting (sent as Token header to api.dmca.com) for create/update and most reads. getSiteReport uses upstream path /getSiteReport/{domain}.",
       "serverName": "dmca-cases",
-      "serverVersion": "1.1.0",
+      "serverVersion": "1.2.0",
       "encryptClientState": true,
       "system": {
         "webhookAuthorizationLevel": "System"

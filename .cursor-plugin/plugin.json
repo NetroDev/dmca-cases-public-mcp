@@ -2,7 +2,7 @@
   "name": "dmca-cases-public-mcp",
   "displayName": "DMCA Cases MCP",
   "version": "1.0.0",
-  "description": "DMCA.com cases MCP (listCases, getCaseById, createCase, updateCase, login).",
+  "description": "DMCA.com cases MCP (listCases, getCaseById, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport, login).",
   "author": {
     "name": "DMCA MCP Cases"
   },

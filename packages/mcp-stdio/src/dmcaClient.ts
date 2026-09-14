@@ -37,6 +37,7 @@ function throwIfNotOk(path: string, res: Response, body: unknown): void {
 
 /**
  * GET a DMCA.com public REST path and return parsed JSON as-is.
+ * Path may include segments (e.g. /getSiteReport/{domain}); optional query is appended.
  */
 export async function dmcaGet(
   path: string,

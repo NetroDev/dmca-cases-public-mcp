@@ -164,6 +164,109 @@ public sealed class CaseTools
         return await SafePost("/updateCase", payload, withToken: true, ct).ConfigureAwait(false);
     }
 
+
+    [Function(nameof(CreateDiyCaseTool))]
+    public async Task<string> CreateDiyCaseTool(
+        [McpToolTrigger("createDIYCase", "POST https://api.dmca.com/createDIYCase — create DIY case. Requires Token.")]
+            ToolInvocationContext context,
+        [McpToolProperty("subject", "Case subject.", isRequired: true)]
+            string subject,
+        [McpToolProperty("description", "Case description.", isRequired: true)]
+            string description,
+        [McpToolProperty("type", "DIY case type enum (e.g. Business - General, Personal - General, Toolkit Business/Personal Request CAN|EU|India).", isRequired: true)]
+            string type,
+        [McpToolProperty("copiedFromUrl", "Optional original / copied-from URL.", isRequired: false)]
+            string? copiedFromUrl,
+        [McpToolProperty("infringingUrl", "Optional infringing URL.", isRequired: false)]
+            string? infringingUrl,
+        [McpToolProperty("infringingSiteIp", "Optional infringing site IP.", isRequired: false)]
+            string? infringingSiteIp,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description)
+            || string.IsNullOrWhiteSpace(type))
+        {
+            return "{\"error\":\"subject, description, and type are required\"}";
+        }
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["subject"] = subject,
+            ["description"] = description,
+            ["type"] = type,
+        };
+        if (!string.IsNullOrWhiteSpace(copiedFromUrl)) payload["copiedFromUrl"] = copiedFromUrl;
+        if (!string.IsNullOrWhiteSpace(infringingUrl)) payload["infringingUrl"] = infringingUrl;
+        if (!string.IsNullOrWhiteSpace(infringingSiteIp)) payload["infringingSiteIp"] = infringingSiteIp;
+
+        return await SafePost("/createDIYCase", payload, withToken: true, ct).ConfigureAwait(false);
+    }
+
+    [Function(nameof(CreateComplianceCaseTool))]
+    public async Task<string> CreateComplianceCaseTool(
+        [McpToolTrigger("createComplianceCase", "POST https://api.dmca.com/createComplianceCase — create compliance case. Requires Token. siteId site owner must have feature enabled.")]
+            ToolInvocationContext context,
+        [McpToolProperty("submitterEmail", "Submitter email.", isRequired: true)]
+            string submitterEmail,
+        [McpToolProperty("submitterFirstName", "Submitter first name.", isRequired: true)]
+            string submitterFirstName,
+        [McpToolProperty("submitterLastName", "Submitter last name.", isRequired: true)]
+            string submitterLastName,
+        [McpToolProperty("description", "Case description.", isRequired: true)]
+            string description,
+        [McpToolProperty("siteId", "Id of the site the case is submitted to (site owner must have feature enabled).", isRequired: true)]
+            string siteId,
+        [McpToolProperty("submitterCompanyName", "Optional submitter company name.", isRequired: false)]
+            string? submitterCompanyName,
+        [McpToolProperty("copiedFromUrl", "Optional original / copied-from URL.", isRequired: false)]
+            string? copiedFromUrl,
+        [McpToolProperty("infringingUrl", "Optional infringing URL.", isRequired: false)]
+            string? infringingUrl,
+        [McpToolProperty("infringingSiteIp", "Optional infringing site IP.", isRequired: false)]
+            string? infringingSiteIp,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(submitterEmail) || string.IsNullOrWhiteSpace(submitterFirstName)
+            || string.IsNullOrWhiteSpace(submitterLastName) || string.IsNullOrWhiteSpace(description)
+            || string.IsNullOrWhiteSpace(siteId))
+        {
+            return "{\"error\":\"submitterEmail, submitterFirstName, submitterLastName, description, and siteId are required\"}";
+        }
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["submitterEmail"] = submitterEmail,
+            ["submitterFirstName"] = submitterFirstName,
+            ["submitterLastName"] = submitterLastName,
+            ["description"] = description,
+            ["siteId"] = siteId,
+        };
+        if (!string.IsNullOrWhiteSpace(submitterCompanyName)) payload["submitterCompanyName"] = submitterCompanyName;
+        if (!string.IsNullOrWhiteSpace(copiedFromUrl)) payload["copiedFromUrl"] = copiedFromUrl;
+        if (!string.IsNullOrWhiteSpace(infringingUrl)) payload["infringingUrl"] = infringingUrl;
+        if (!string.IsNullOrWhiteSpace(infringingSiteIp)) payload["infringingSiteIp"] = infringingSiteIp;
+
+        return await SafePost("/createComplianceCase", payload, withToken: true, ct).ConfigureAwait(false);
+    }
+
+    [Function(nameof(GetSiteReportTool))]
+    public async Task<string> GetSiteReportTool(
+        [McpToolTrigger("getSiteReport", "GET https://api.dmca.com/getSiteReport/{domain} — site report for a fully qualified domain name. Requires Token.")]
+            ToolInvocationContext context,
+        [McpToolProperty("domain", "Fully qualified domain name (path segment upstream).", isRequired: true)]
+            string domain,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(domain))
+        {
+            return "{\"error\":\"domain is required\"}";
+        }
+
+        var trimmed = domain.Trim();
+        var path = "/getSiteReport/" + Uri.EscapeDataString(trimmed);
+        return await SafeGet(path, null, ct).ConfigureAwait(false);
+    }
+
     private static Dictionary<string, string?>? PageQuery(double? page)
     {
         if (page is null) return null;

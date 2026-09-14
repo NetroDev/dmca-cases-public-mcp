@@ -137,6 +137,97 @@ public sealed class CaseHttpEndpoints
         return await ProxyPost(req, "/updateCase", payload, withToken: true, ct).ConfigureAwait(false);
     }
 
+
+    [Function("HttpCreateDiyCase")]
+    public async Task<HttpResponseData> CreateDiyCase(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/createDIYCase")] HttpRequestData req,
+        CancellationToken ct)
+    {
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
+        var root = doc.RootElement;
+        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
+        var subject = Get("subject");
+        var description = Get("description");
+        var type = Get("type");
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description)
+            || string.IsNullOrWhiteSpace(type))
+        {
+            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+            bad.Headers.Add("Content-Type", "application/json");
+            await bad.WriteStringAsync("{\"error\":\"subject, description, and type are required\"}", ct).ConfigureAwait(false);
+            return bad;
+        }
+        var payload = new Dictionary<string, object?>
+        {
+            ["subject"] = subject,
+            ["description"] = description,
+            ["type"] = type,
+        };
+        foreach (var k in new[] { "copiedFromUrl", "infringingUrl", "infringingSiteIp" })
+        {
+            var v = Get(k);
+            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
+        }
+        return await ProxyPost(req, "/createDIYCase", payload, withToken: true, ct).ConfigureAwait(false);
+    }
+
+    [Function("HttpCreateComplianceCase")]
+    public async Task<HttpResponseData> CreateComplianceCase(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/createComplianceCase")] HttpRequestData req,
+        CancellationToken ct)
+    {
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
+        var root = doc.RootElement;
+        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
+        var submitterEmail = Get("submitterEmail");
+        var submitterFirstName = Get("submitterFirstName");
+        var submitterLastName = Get("submitterLastName");
+        var description = Get("description");
+        var siteId = Get("siteId");
+        if (string.IsNullOrWhiteSpace(submitterEmail) || string.IsNullOrWhiteSpace(submitterFirstName)
+            || string.IsNullOrWhiteSpace(submitterLastName) || string.IsNullOrWhiteSpace(description)
+            || string.IsNullOrWhiteSpace(siteId))
+        {
+            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+            bad.Headers.Add("Content-Type", "application/json");
+            await bad.WriteStringAsync("{\"error\":\"submitterEmail, submitterFirstName, submitterLastName, description, and siteId are required\"}", ct).ConfigureAwait(false);
+            return bad;
+        }
+        var payload = new Dictionary<string, object?>
+        {
+            ["submitterEmail"] = submitterEmail,
+            ["submitterFirstName"] = submitterFirstName,
+            ["submitterLastName"] = submitterLastName,
+            ["description"] = description,
+            ["siteId"] = siteId,
+        };
+        foreach (var k in new[] { "submitterCompanyName", "copiedFromUrl", "infringingUrl", "infringingSiteIp" })
+        {
+            var v = Get(k);
+            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
+        }
+        return await ProxyPost(req, "/createComplianceCase", payload, withToken: true, ct).ConfigureAwait(false);
+    }
+
+    [Function("HttpGetSiteReport")]
+    public async Task<HttpResponseData> GetSiteReport(
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/getSiteReport")] HttpRequestData req,
+        CancellationToken ct)
+    {
+        // Prefer query ?domain= for Function routing; upstream call uses /getSiteReport/{domain}.
+        var domain = GetQuery(req, "domain");
+        if (string.IsNullOrWhiteSpace(domain))
+        {
+            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+            await bad.WriteStringAsync("{\"error\":\"query parameter domain is required\"}", ct).ConfigureAwait(false);
+            bad.Headers.Add("Content-Type", "application/json");
+            return bad;
+        }
+
+        var path = "/getSiteReport/" + Uri.EscapeDataString(domain.Trim());
+        return await ProxyGet(req, path, null, ct).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Documented MCP entrypoint pointer (not a full streamable-http implementation).
     /// Clients should connect to /runtime/webhooks/mcp provided by the Functions MCP extension.
@@ -151,8 +242,8 @@ public sealed class CaseHttpEndpoints
         const string body = """
         {
           "name": "dmca-cases",
-          "version": "1.1.0",
-          "policy": "list-get-plus-login-create-update",
+          "version": "1.2.0",
+          "policy": "list-get-plus-login-create-update-diy-compliance-site-report",
           "mcpStreamableHttp": "/runtime/webhooks/mcp",
           "mcpSse": "/runtime/webhooks/mcp/sse",
           "httpToolMirrors": [
@@ -162,9 +253,12 @@ public sealed class CaseHttpEndpoints
             "/api/getCaseById",
             "/api/login",
             "/api/createCase",
-            "/api/updateCase"
+            "/api/updateCase",
+            "/api/createDIYCase",
+            "/api/createComplianceCase",
+            "/api/getSiteReport"
           ],
-          "note": "Use Microsoft.Azure.Functions.Worker.Extensions.Mcp Streamable HTTP at /runtime/webhooks/mcp. Pass x-functions-key with the mcp_extension system key unless webhookAuthorizationLevel is Anonymous."
+          "note": "Use Microsoft.Azure.Functions.Worker.Extensions.Mcp Streamable HTTP at /runtime/webhooks/mcp. Pass x-functions-key with the mcp_extension system key unless webhookAuthorizationLevel is Anonymous. getSiteReport HTTP mirror uses query ?domain=; upstream calls GET /getSiteReport/{domain}."
         }
         """;
         await res.WriteStringAsync(body, ct).ConfigureAwait(false);

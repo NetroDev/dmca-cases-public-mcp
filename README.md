@@ -14,13 +14,16 @@ Maintained as **DMCA MCP Cases**.
 | `listComplianceCases` | `GET https://api.dmca.com/listComplianceCases` |
 | `getCaseById` | `GET https://api.dmca.com/getCaseById?id=` |
 | `createCase` | `POST https://api.dmca.com/createCase` |
+| `createDIYCase` | `POST https://api.dmca.com/createDIYCase` |
+| `createComplianceCase` | `POST https://api.dmca.com/createComplianceCase` |
 | `updateCase` | `POST https://api.dmca.com/updateCase` |
+| `getSiteReport` | `GET https://api.dmca.com/getSiteReport/{domain}` |
 
-**Not** exposed: `createDIYCase`, `createComplianceCase`, `register`, badge/protected-item APIs.
+**Not** exposed: `register`, badge/protected-item APIs, XARF.
 
 Auth: env `DMCA_API_TOKEN` (or `DMCA_TOKEN`) sent as HTTP header `Token`. `login` can mint a token. Never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
 
-`createCase` and `updateCase` require a valid Token (`DMCA_API_TOKEN`).
+`createCase`, `createDIYCase`, `createComplianceCase`, and `updateCase` require a valid Token (`DMCA_API_TOKEN`). `getSiteReport` also sends Token.
 
 Canonical docs: [www.dmca.com/api](https://www.dmca.com/api/) · OpenAPI [2.1.2](https://api.swaggerhub.com/apis/dmca/dmca-api/2.1.2) · host `https://api.dmca.com`.
 
@@ -59,7 +62,7 @@ Cover: `/cover` · Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, cod
 
 - MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`)
 - Info pointer: `GET /api/mcp`
-- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`
+- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (upstream path `/getSiteReport/{domain}`)
 
 App setting: `DMCA_API_TOKEN`.
 
