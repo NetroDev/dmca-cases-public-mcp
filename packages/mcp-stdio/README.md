@@ -1,17 +1,20 @@
 # `@netrodev/dmca-cases-mcp`
 
-Read-only stdio MCP server for DMCA.com case **list** and **get** APIs.
+stdio MCP server for DMCA.com case **list**, **get**, **login**, **createCase**, and **updateCase**.
 
-## Tools (v1)
+## Tools
 
 | Tool | Upstream |
 |------|----------|
+| `login` | `POST https://api.dmca.com/login` |
 | `listCases` | `GET https://api.dmca.com/listCases` |
 | `listDIYCases` | `GET https://api.dmca.com/listDIYCases` |
 | `listComplianceCases` | `GET https://api.dmca.com/listComplianceCases` |
 | `getCaseById` | `GET https://api.dmca.com/getCaseById?id=` |
+| `createCase` | `POST https://api.dmca.com/createCase` |
+| `updateCase` | `POST https://api.dmca.com/updateCase` |
 
-No create/update/login/register tools.
+`createCase` and `updateCase` require `DMCA_API_TOKEN` (Token header).
 
 ## Env
 

@@ -9,7 +9,7 @@
     <AssemblyName>DmcaCasesMcp.Functions</AssemblyName>
     <Authors>DMCA MCP Cases</Authors>
     <Company>DMCA MCP Cases</Company>
-    <Description>Read-only DMCA.com cases MCP over Azure Functions (Isolated .NET 8).</Description>
+    <Description>DMCA.com cases MCP over Azure Functions (Isolated .NET 8): list/get, login, createCase, updateCase.</Description>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

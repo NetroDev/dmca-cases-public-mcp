@@ -14,9 +14,9 @@
   },
   "extensions": {
     "mcp": {
-      "instructions": "Read-only DMCA.com cases MCP v1. Tools: listCases, listDIYCases, listComplianceCases, getCaseById. Requires DMCA_API_TOKEN app setting (sent as Token header to api.dmca.com). No create/update tools.",
+      "instructions": "DMCA.com cases MCP. Tools: login, listCases, listDIYCases, listComplianceCases, getCaseById, createCase, updateCase. Requires DMCA_API_TOKEN app setting (sent as Token header to api.dmca.com) for create/update and most reads.",
       "serverName": "dmca-cases",
-      "serverVersion": "1.0.0",
+      "serverVersion": "1.1.0",
       "encryptClientState": true,
       "system": {
         "webhookAuthorizationLevel": "System"

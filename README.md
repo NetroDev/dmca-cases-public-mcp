@@ -1,23 +1,26 @@
 # dmca-cases-public-mcp
 
-Public **read-only** MCP for [DMCA.com](https://www.dmca.com) cases (company of record: DMCA.com).
+Public MCP for [DMCA.com](https://www.dmca.com) cases (company of record: DMCA.com).
 
 Maintained as **DMCA MCP Cases**.
 
-## Policy (v1)
-
-Exposes **list/get only**:
+## Tools
 
 | Tool | Upstream |
 |------|----------|
+| `login` | `POST https://api.dmca.com/login` |
 | `listCases` | `GET https://api.dmca.com/listCases` |
 | `listDIYCases` | `GET https://api.dmca.com/listDIYCases` |
 | `listComplianceCases` | `GET https://api.dmca.com/listComplianceCases` |
 | `getCaseById` | `GET https://api.dmca.com/getCaseById?id=` |
+| `createCase` | `POST https://api.dmca.com/createCase` |
+| `updateCase` | `POST https://api.dmca.com/updateCase` |
 
-**Not** exposed: `createCase`, `updateCase`, `createDIYCase`, `createComplianceCase`, `register`, `login`, badge/protected-item APIs.
+**Not** exposed: `createDIYCase`, `createComplianceCase`, `register`, badge/protected-item APIs.
 
-Auth: env `DMCA_API_TOKEN` (or `DMCA_TOKEN`) sent as HTTP header `Token`. Never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
+Auth: env `DMCA_API_TOKEN` (or `DMCA_TOKEN`) sent as HTTP header `Token`. `login` can mint a token. Never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
+
+`createCase` and `updateCase` require a valid Token (`DMCA_API_TOKEN`).
 
 Canonical docs: [www.dmca.com/api](https://www.dmca.com/api/) · OpenAPI [2.1.2](https://api.swaggerhub.com/apis/dmca/dmca-api/2.1.2) · host `https://api.dmca.com`.
 
@@ -48,15 +51,15 @@ Package name: `@netrodev/dmca-cases-mcp` · registry `mcpName`: `io.github.Netro
 
 ## B) Azure Functions (.NET Isolated)
 
-Live Function App (waiting for deploy):
+Live Function App:
 
 `https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net`
 
-Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, code deploy — not container).
+Cover: `/cover` · Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, code deploy — not container).
 
 - MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`)
 - Info pointer: `GET /api/mcp`
-- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`
+- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`
 
 App setting: `DMCA_API_TOKEN`.
 
@@ -69,7 +72,7 @@ func azure functionapp publish dmca-cases-public-mcp --dotnet-isolated
 
 (Use the exact Function App resource name in your subscription if it differs.)
 
-Prefer **Flex Consumption**. Classic Consumption also works for short list/get calls.
+Prefer **Flex Consumption**.
 
 ## Registry metadata
 

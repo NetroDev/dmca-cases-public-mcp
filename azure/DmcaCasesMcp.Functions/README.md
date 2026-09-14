@@ -1,6 +1,6 @@
 # DmcaCasesMcp.Functions
 
-.NET 8 Isolated Azure Functions host for the read-only DMCA Cases MCP.
+.NET 8 Isolated Azure Functions host for the DMCA Cases MCP (list/get plus login, createCase, updateCase).
 
 ## Config
 
@@ -11,7 +11,8 @@
 - MCP Streamable HTTP: `/runtime/webhooks/mcp` (Microsoft.Azure.Functions.Worker.Extensions.Mcp)
 - MCP SSE: `/runtime/webhooks/mcp/sse`
 - Info: `GET /api/mcp`
-- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`
+- Cover: `GET /cover`
+- HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`
 
 ## Deploy (code, not container)
 
@@ -24,4 +25,4 @@ dotnet build -c Release
 func azure functionapp publish <FUNCTION_APP_NAME> --dotnet-isolated
 ```
 
-Prefer Flex Consumption. Do not enable create/update tools in this project.
+Prefer Flex Consumption.

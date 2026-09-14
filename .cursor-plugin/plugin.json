@@ -2,12 +2,17 @@
   "name": "dmca-cases-public-mcp",
   "displayName": "DMCA Cases MCP",
   "version": "1.0.0",
-  "description": "Read-only DMCA.com cases MCP (listCases, listDIYCases, listComplianceCases, getCaseById).",
+  "description": "DMCA.com cases MCP (listCases, getCaseById, createCase, updateCase, login).",
   "author": {
     "name": "DMCA MCP Cases"
   },
   "homepage": "https://github.com/NetroDev/dmca-cases-public-mcp",
   "repository": "https://github.com/NetroDev/dmca-cases-public-mcp",
   "license": "MIT",
-  "keywords": ["dmca", "mcp", "cases", "takedown"]
+  "keywords": [
+    "dmca",
+    "mcp",
+    "cases",
+    "takedown"
+  ]
 }

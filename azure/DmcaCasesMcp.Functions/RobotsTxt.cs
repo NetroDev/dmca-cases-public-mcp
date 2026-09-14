@@ -22,6 +22,9 @@ public sealed class RobotsTxt
             Disallow: /api/listDIYCases
             Disallow: /api/listComplianceCases
             Disallow: /api/getCaseById
+            Disallow: /api/login
+            Disallow: /api/createCase
+            Disallow: /api/updateCase
             Disallow: /runtime/
 
             Sitemap: https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/sitemap.xml

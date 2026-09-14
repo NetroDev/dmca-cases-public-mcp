@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.NetroDev/dmca-cases",
-  "description": "Read-only DMCA.com Cases MCP (list/get). Managed, DIY, and compliance case listing and lookup via Token auth.",
+  "description": "DMCA.com Cases MCP: list/get plus login, createCase, and updateCase via Token auth.",
   "repository": {
     "url": "https://github.com/NetroDev/dmca-cases-public-mcp",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@netrodev/dmca-cases-mcp",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "transport": {
         "type": "stdio"
       },
