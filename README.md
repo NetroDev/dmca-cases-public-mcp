@@ -71,7 +71,7 @@ Default Azure hostname (fallback, serves the same app):
 
 Cover: `/` (root) and `/cover` (alias) · Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, code deploy — not container).
 
-- MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`). The protocol endpoint is fixed by the Microsoft MCP extension; `/` is the HTML cover, not the MCP endpoint. Requests need an `x-functions-key` header (the `mcp_extension` system key, issued by DMCA.com on request).
+- MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`). The protocol endpoint is fixed by the Microsoft MCP extension; `/` is the HTML cover, not the MCP endpoint. No key is needed (`webhookAuthorizationLevel` is `Anonymous`); each caller authenticates to DMCA.com with the `login` tool.
 - Info pointer: `GET /api/mcp`
 - HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (upstream path `/getSiteReport/{domain}`)
 
