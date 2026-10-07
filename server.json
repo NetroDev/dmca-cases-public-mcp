@@ -38,15 +38,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://mcp.dmca.com/runtime/webhooks/mcp",
-      "headers": [
-        {
-          "name": "x-functions-key",
-          "description": "Access key for the hosted DMCA.com Cases MCP endpoint. Issued by DMCA.com on request; requests without it are rejected with 401.",
-          "isRequired": true,
-          "isSecret": true
-        }
-      ]
+      "url": "https://mcp.dmca.com/runtime/webhooks/mcp"
     }
   ]
 }
