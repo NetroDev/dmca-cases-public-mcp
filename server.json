@@ -28,7 +28,7 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@netrodev/dmca-cases-mcp",
+      "identifier": "dmca-cases-mcp",
       "version": "1.2.0",
       "transport": {
         "type": "stdio"

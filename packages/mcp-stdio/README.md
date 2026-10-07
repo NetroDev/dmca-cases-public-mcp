@@ -1,4 +1,4 @@
-# `@netrodev/dmca-cases-mcp`
+# `dmca-cases-mcp`
 
 stdio MCP server for DMCA.com case **list**, **get**, **login**, **createCase**, **createDIYCase**, **createComplianceCase**, **updateCase**, and **getSiteReport**.
 
@@ -34,7 +34,7 @@ DMCA_API_TOKEN=your_token node dist/index.js
 Or via npx after publish:
 
 ```bash
-npx -y @netrodev/dmca-cases-mcp
+npx -y dmca-cases-mcp
 ```
 
 ## Cursor / Claude Desktop
@@ -44,7 +44,7 @@ npx -y @netrodev/dmca-cases-mcp
   "mcpServers": {
     "dmca-cases": {
       "command": "npx",
-      "args": ["-y", "@netrodev/dmca-cases-mcp"],
+      "args": ["-y", "dmca-cases-mcp"],
       "env": {
         "DMCA_API_TOKEN": "YOUR_TOKEN"
       }

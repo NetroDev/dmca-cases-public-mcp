@@ -43,14 +43,14 @@ Cursor / Claude Desktop:
   "mcpServers": {
     "dmca-cases": {
       "command": "npx",
-      "args": ["-y", "@netrodev/dmca-cases-mcp"],
+      "args": ["-y", "dmca-cases-mcp"],
       "env": { "DMCA_API_TOKEN": "YOUR_TOKEN" }
     }
   }
 }
 ```
 
-Package name: `@netrodev/dmca-cases-mcp` · registry `mcpName`: `io.github.NetroDev/dmca-cases`.
+Package name: `dmca-cases-mcp` · registry `mcpName`: `io.github.NetroDev/dmca-cases`.
 
 ## B) Azure Functions (.NET Isolated)
 
