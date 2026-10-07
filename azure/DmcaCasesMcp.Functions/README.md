@@ -4,16 +4,16 @@
 
 ## Config
 
-- `DMCA_API_TOKEN` — app setting / Key Vault reference. Fallback `Token` header for `https://api.dmca.com`
-  when the caller has not logged in or passed a token.
+- No DMCA token app setting. Every caller uses their own token.
 
 ## Tokens
 
-Each tool call picks its token in this order: the `token` argument, the token from this MCP session's
-`login` (in-memory cache keyed by the MCP session id, 12 h TTL, max 1000 entries, per instance), an
-`X-DMCA-Token` request header, then `DMCA_API_TOKEN`. The HTTP mirrors take `token` (query/body),
-`X-DMCA-Token` or `Token` headers, then `DMCA_API_TOKEN`. With more than one instance a session can land
-on an instance that did not see its `login`; callers that need a guaranteed account should pass `token`.
+Each tool call uses the caller's own token: the `token` argument, else the token from this MCP
+session's `login` (in-memory cache keyed by the MCP session id, 12 h TTL, max 1000 entries, per
+instance). With neither, the tool returns `{"error": "Not logged in. ...", "status": 401}`. The HTTP mirrors
+take `token` (query/body) or the `X-DMCA-Token` / `Token` header. With more than one instance a
+session can land on an instance that did not see its `login`; the tool then says "Not logged in" and
+the caller should pass `token` (or log in again).
 
 ## Endpoints
 

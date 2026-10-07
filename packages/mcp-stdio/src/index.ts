@@ -12,6 +12,7 @@ import {
   dmcaList,
   dmcaLogin,
   dmcaPost,
+  forgetSessionToken,
   rememberSessionToken,
   resolveToken,
 } from "./dmcaClient.js";
@@ -170,6 +171,8 @@ function createServer(): McpServer {
           sessionCached: true,
         });
       } catch (err) {
+        // A failed login must not leave this session acting as whoever logged in before.
+        forgetSessionToken();
         return errorResult(err);
       }
     }

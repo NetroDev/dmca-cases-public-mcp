@@ -21,14 +21,12 @@ Maintained as **DMCA MCP Cases**.
 
 **Not** exposed: `register`, badge/protected-item APIs, XARF.
 
-Auth: every tool except `login` sends a DMCA API token as HTTP header `Token`. The token is picked per call, in this order:
+Auth: every tool except `login` sends the caller's own DMCA API token as HTTP header `Token`:
 
-1. the tool's optional `token` argument;
-2. the token from this caller's successful `login` in the same MCP session (stdio: the process; remote: the MCP session id, kept in server memory for up to 12 hours, max 1000 sessions);
-3. remote only: an `X-DMCA-Token` header on the MCP HTTP request;
-4. the server's `DMCA_API_TOKEN` (or `DMCA_TOKEN`) env var / app setting.
+1. the tool's optional `token` argument, or
+2. the token from this caller's successful `login` in the same MCP session (stdio: the process; remote: the MCP session id, kept in server memory for up to 12 hours, max 1000 sessions).
 
-So a user who calls `login` with their own DMCA.com credentials creates and reads cases under their own account. Tokens and passwords are never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
+There is no shared server token. Without login or `token`, tools fail with "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token." Cases are created and read under the account that logged in. Tokens and passwords are never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
 
 `updateCase` leaves status and priority unchanged unless you pass them (the upstream API clears them when they are omitted, so the server re-sends the current values). List tools return `{"cases": [], "count": 0, ...}` when the upstream API reports no cases (it answers `/listDIYCases` with an empty HTTP 404).
 
@@ -40,7 +38,7 @@ Canonical docs: [www.dmca.com/api](https://www.dmca.com/api/) · OpenAPI [2.1.2]
 cd packages/mcp-stdio
 npm install
 npm run build
-DMCA_API_TOKEN=your_token node dist/index.js
+node dist/index.js
 ```
 
 Cursor / Claude Desktop:
@@ -50,8 +48,7 @@ Cursor / Claude Desktop:
   "mcpServers": {
     "dmca-cases": {
       "command": "npx",
-      "args": ["-y", "dmca-cases-mcp"],
-      "env": { "DMCA_API_TOKEN": "YOUR_TOKEN" }
+      "args": ["-y", "dmca-cases-mcp"]
     }
   }
 }
@@ -75,7 +72,7 @@ Cover: `/` (root) and `/cover` (alias) · Project: `azure/DmcaCasesMcp.Functions
 - Info pointer: `GET /api/mcp`
 - HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (upstream path `/getSiteReport/{domain}`)
 
-App setting: `DMCA_API_TOKEN` (fallback token when the caller has not logged in or passed `token`).
+No DMCA token app setting: each caller signs in with `login` (or passes `token`).
 
 Deploy (after `dotnet` + Azure Functions Core Tools are available):
 
@@ -107,4 +104,3 @@ Required repo secret:
 1. Azure Portal → Function App `dmca-cases-public-mcp` → **Get publish profile**
 2. GitHub → Settings → Secrets and variables → Actions → `AZURE_FUNCTIONAPP_PUBLISH_PROFILE`
 
-Also set Function App setting `DMCA_API_TOKEN` in Azure (not in GitHub) for live API calls.

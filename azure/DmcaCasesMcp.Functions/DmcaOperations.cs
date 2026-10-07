@@ -171,8 +171,8 @@ public sealed class DmcaOperations
 
     private OpResult MissingToken(string path)
     {
-        _logger.LogWarning("DMCA {Path}: no token available from argument, session, header, or app setting", path);
-        return OpResult.Error(401, new MissingTokenException().Message);
+        _logger.LogInformation("DMCA {Path}: caller is not logged in and passed no token", path);
+        return OpResult.Error(401, NotLoggedIn.Message);
     }
 
     private OpResult Failure(string path, Exception ex)

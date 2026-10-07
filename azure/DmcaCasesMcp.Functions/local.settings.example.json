@@ -2,7 +2,6 @@
   "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "DMCA_API_TOKEN": ""
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
   }
 }

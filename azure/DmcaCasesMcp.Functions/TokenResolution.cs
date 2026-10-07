@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Azure.Functions.Worker.Extensions.Mcp;
-using Microsoft.Extensions.Configuration;
 
 namespace DmcaCasesMcp.Functions;
 
@@ -13,7 +12,6 @@ public enum TokenSource
     Argument,
     Session,
     Header,
-    AppSetting,
 }
 
 public readonly record struct ResolvedToken(string Value, TokenSource Source);
@@ -50,6 +48,8 @@ public sealed class SessionTokenCache
 
         _entries[Key(sessionId)] = new Entry(token, now + Ttl);
     }
+
+    public void Remove(string sessionId) => _entries.TryRemove(Key(sessionId), out _);
 
     public bool TryGet(string sessionId, out string token)
     {
@@ -91,12 +91,10 @@ public sealed class SessionTokenCache
 }
 
 /// <summary>
-/// Resolves the DMCA API token for a tool call, in this order:
+/// Resolves the DMCA API token for a tool call. Only the caller's own token is used:
 ///   1. the tool's optional <c>token</c> argument,
-///   2. a token remembered from this MCP session's successful <c>login</c> call,
-///   3. an <c>X-DMCA-Token</c> header on the MCP HTTP request (when the extension passes headers through),
-///   4. the DMCA_API_TOKEN / DMCA_TOKEN app setting (server-wide default, kept for backward compatibility).
-/// Token values are never logged.
+///   2. a token remembered from this MCP session's successful <c>login</c> call.
+/// There is no server-wide fallback token. Token values are never logged.
 /// </summary>
 public sealed class DmcaTokenResolver
 {
@@ -104,12 +102,10 @@ public sealed class DmcaTokenResolver
     private const string SessionHeaderName = "Mcp-Session-Id";
 
     private readonly SessionTokenCache _cache;
-    private readonly IConfiguration _config;
 
-    public DmcaTokenResolver(SessionTokenCache cache, IConfiguration config)
+    public DmcaTokenResolver(SessionTokenCache cache)
     {
         _cache = cache;
-        _config = config;
     }
 
     /// <summary>MCP session id for this invocation, if the extension provides one.</summary>
@@ -117,13 +113,8 @@ public sealed class DmcaTokenResolver
     {
         if (context is null) return null;
         if (!string.IsNullOrWhiteSpace(context.SessionId)) return context.SessionId;
-        return GetHeader(context, SessionHeaderName);
-    }
-
-    public static string? GetHeader(ToolInvocationContext? context, string name)
-    {
-        if (context?.Transport is HttpTransport http
-            && http.Headers.TryGetValue(name, out var value)
+        if (context.Transport is HttpTransport http
+            && http.Headers.TryGetValue(SessionHeaderName, out var value)
             && !string.IsNullOrWhiteSpace(value))
         {
             return value.Trim();
@@ -145,24 +136,7 @@ public sealed class DmcaTokenResolver
             return new ResolvedToken(cached, TokenSource.Session);
         }
 
-        var header = GetHeader(context, TokenHeaderName);
-        if (header is not null)
-        {
-            return new ResolvedToken(header, TokenSource.Header);
-        }
-
-        return ResolveFallback();
-    }
-
-    /// <summary>Server-wide DMCA_API_TOKEN / DMCA_TOKEN setting, or null when unset.</summary>
-    public ResolvedToken? ResolveFallback()
-    {
-        var token = FirstNonBlank(
-            _config["DMCA_API_TOKEN"],
-            _config["DMCA_TOKEN"],
-            Environment.GetEnvironmentVariable("DMCA_API_TOKEN"),
-            Environment.GetEnvironmentVariable("DMCA_TOKEN"));
-        return token is null ? null : new ResolvedToken(token, TokenSource.AppSetting);
+        return null;
     }
 
     /// <summary>Remember a login token for this MCP session. Returns false when there is no session id to key on.</summary>
@@ -172,6 +146,13 @@ public sealed class DmcaTokenResolver
         if (sessionId is null) return false;
         _cache.Set(sessionId, token);
         return true;
+    }
+
+    /// <summary>Drop any token cached for this MCP session (used when a new login attempt fails).</summary>
+    public void ForgetSession(ToolInvocationContext? context)
+    {
+        var sessionId = GetSessionId(context);
+        if (sessionId is not null) _cache.Remove(sessionId);
     }
 
     /// <summary>
@@ -224,12 +205,8 @@ public sealed class DmcaTokenResolver
     }
 }
 
-/// <summary>Thrown when no token is available from any source.</summary>
-public sealed class MissingTokenException : Exception
+/// <summary>Message returned when the caller has neither logged in nor passed a token.</summary>
+public static class NotLoggedIn
 {
-    public MissingTokenException()
-        : base("No DMCA API token available. Call the login tool first (the token is then reused for this session), "
-               + "pass the token from login as the `token` argument, or configure DMCA_API_TOKEN on the server.")
-    {
-    }
+    public const string Message = "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token.";
 }

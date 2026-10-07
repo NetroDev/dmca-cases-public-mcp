@@ -17,18 +17,14 @@ stdio MCP server for DMCA.com case **list**, **get**, **login**, **createCase**,
 | `updateCase` | `POST https://api.dmca.com/updateCase` |
 | `getSiteReport` | `GET https://api.dmca.com/getSiteReport/{domain}` |
 
-Every tool except `login` sends a DMCA API token as the `Token` header: the tool's optional `token` argument if given, otherwise the token from this session's `login`, otherwise `DMCA_API_TOKEN`. `updateCase` keeps status and priority unless you pass them.
-
-## Env
-
-- `DMCA_API_TOKEN` (preferred) or `DMCA_TOKEN` — optional fallback token, sent as HTTP header `Token` when the session has not logged in and no `token` argument is given. Never logged.
+Every tool except `login` sends your own DMCA API token as the `Token` header: the tool's optional `token` argument if given, otherwise the token from this session's `login`. There is no environment-variable token; without login or `token`, tools fail with "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token." `updateCase` keeps status and priority unless you pass them. Tokens and passwords are never logged.
 
 ## Run
 
 ```bash
 npm install
 npm run build
-DMCA_API_TOKEN=your_token node dist/index.js
+node dist/index.js
 ```
 
 Or via npx after publish:
@@ -44,10 +40,7 @@ npx -y dmca-cases-mcp
   "mcpServers": {
     "dmca-cases": {
       "command": "npx",
-      "args": ["-y", "dmca-cases-mcp"],
-      "env": {
-        "DMCA_API_TOKEN": "YOUR_TOKEN"
-      }
+      "args": ["-y", "dmca-cases-mcp"]
     }
   }
 }

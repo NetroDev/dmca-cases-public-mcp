@@ -32,16 +32,7 @@
       "version": "1.2.0",
       "transport": {
         "type": "stdio"
-      },
-      "environmentVariables": [
-        {
-          "name": "DMCA_API_TOKEN",
-          "description": "Your own DMCA.com API token (sent as the Token header to api.dmca.com). Get it from your DMCA.com account API section or the login tool.",
-          "isRequired": true,
-          "isSecret": true,
-          "format": "string"
-        }
-      ]
+      }
     }
   ],
   "remotes": [

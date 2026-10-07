@@ -1,12 +1,15 @@
 const API_BASE = "https://api.dmca.com";
 
 /** Where the token for a call came from. Never carries the token itself. */
-export type TokenSource = "argument" | "session" | "env";
+export type TokenSource = "argument" | "session";
 
 export interface ResolvedToken {
   value: string;
   source: TokenSource;
 }
+
+export const NOT_LOGGED_IN =
+  "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token.";
 
 /**
  * Token remembered from this process's last successful login. A stdio server runs one
@@ -19,6 +22,11 @@ export function rememberSessionToken(token: string): void {
   sessionToken = { value: token, expiresAt: Date.now() + SESSION_TTL_MS };
 }
 
+/** Forget the session token (used when a new login attempt fails). */
+export function forgetSessionToken(): void {
+  sessionToken = undefined;
+}
+
 function getSessionToken(): string | undefined {
   if (!sessionToken) return undefined;
   if (sessionToken.expiresAt <= Date.now()) {
@@ -28,26 +36,15 @@ function getSessionToken(): string | undefined {
   return sessionToken.value;
 }
 
-/** DMCA_API_TOKEN / DMCA_TOKEN from the environment, if set. */
-export function getEnvToken(): string | undefined {
-  const token = process.env.DMCA_API_TOKEN || process.env.DMCA_TOKEN;
-  return token && token.trim() ? token.trim() : undefined;
-}
-
 /**
- * Resolve the token for a tool call: explicit `token` argument, then the token from this
- * session's login, then DMCA_API_TOKEN / DMCA_TOKEN. Never log the value.
+ * Resolve the caller's own token: the explicit `token` argument, else the token from this
+ * session's login. There is no environment or shared fallback. Never log the value.
  */
 export function resolveToken(explicit?: string): ResolvedToken {
   if (explicit && explicit.trim()) return { value: explicit.trim(), source: "argument" };
   const session = getSessionToken();
   if (session) return { value: session, source: "session" };
-  const env = getEnvToken();
-  if (env) return { value: env, source: "env" };
-  throw new Error(
-    "No DMCA API token available. Call the login tool first (the token is then reused for this session), " +
-      "pass the token from login as the `token` argument, or set DMCA_API_TOKEN (or DMCA_TOKEN) in the environment."
-  );
+  throw Object.assign(new Error(NOT_LOGGED_IN), { status: 401 });
 }
 
 export type DmcaQuery = Record<string, string | number | undefined | null>;

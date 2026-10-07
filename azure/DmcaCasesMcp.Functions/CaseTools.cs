@@ -7,9 +7,9 @@ namespace DmcaCasesMcp.Functions;
 /// <summary>
 /// MCP tool triggers — exposed at /runtime/webhooks/mcp (Streamable HTTP)
 /// via Microsoft.Azure.Functions.Worker.Extensions.Mcp.
-/// Every tool that calls the DMCA API resolves its token per call (see <see cref="DmcaTokenResolver"/>):
-/// `token` argument, then this MCP session's login, then an X-DMCA-Token header, then DMCA_API_TOKEN.
-/// Passwords and tokens are never logged.
+/// Every tool that calls the DMCA API uses the caller's own token (see <see cref="DmcaTokenResolver"/>):
+/// the `token` argument, else the token from this MCP session's login. Without either the tool
+/// returns a "Not logged in" error. Passwords and tokens are never logged.
 /// </summary>
 public sealed class CaseTools
 {
@@ -97,6 +97,8 @@ public sealed class CaseTools
         var (result, token) = await _ops.LoginAsync(email, password, ct).ConfigureAwait(false);
         if (token is null)
         {
+            // A failed login must not leave the session acting as whoever logged in before.
+            _tokens.ForgetSession(context);
             return Finish(result);
         }
 
@@ -106,7 +108,7 @@ public sealed class CaseTools
         var usage = cached
             ? "This token will be used automatically for the rest of this MCP session (kept in server memory for up to 12 hours). "
               + "You can also pass it as the `token` argument on any tool call; an explicit `token` always wins. "
-              + "If a later call fails with HTTP 401, pass the token explicitly."
+              + "If a later call says you are not logged in, pass the token explicitly."
             : "This server could not identify an MCP session for this connection, so the token was not cached. "
               + "Pass it as the `token` argument on each tool call.";
         return DmcaOperations.LoginResultJson(token, cached, usage);
@@ -295,15 +297,15 @@ public sealed class CaseTools
     /// The MCP worker extension (1.0.0) fails to bind a string tool property whose value looks like a
     /// GUID — the parameter arrives null — so case ids are read from the raw tool arguments instead.
     /// </summary>
-    private static string? FromArguments(ToolInvocationContext context, string name, string? bound)
+    private static string FromArguments(ToolInvocationContext context, string name, string? bound)
     {
         if (!string.IsNullOrWhiteSpace(bound)) return bound;
-        if (context.Arguments is null || !context.Arguments.TryGetValue(name, out var raw) || raw is null) return bound;
+        if (context.Arguments is null || !context.Arguments.TryGetValue(name, out var raw) || raw is null) return string.Empty;
         return raw switch
         {
             string text => text,
-            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.String } el => el.GetString(),
-            _ => raw.ToString(),
+            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.String } el => el.GetString() ?? string.Empty,
+            _ => raw.ToString() ?? string.Empty,
         };
     }
 
@@ -312,5 +314,9 @@ public sealed class CaseTools
         if (!string.IsNullOrWhiteSpace(value)) payload[key] = value;
     }
 
+    /// <summary>
+    /// Tool text. Failures are JSON with an "error" field; the MCP extension version used here (1.0.0,
+    /// .NET 8) cannot set isError=true on a tool result.
+    /// </summary>
     private static string Finish(OpResult result) => result.Json;
 }
