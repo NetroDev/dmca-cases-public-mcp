@@ -111,6 +111,7 @@ public sealed class CaseTools
               + "If a later call says you are not logged in, pass the token explicitly."
             : "This server could not identify an MCP session for this connection, so the token was not cached. "
               + "Pass it as the `token` argument on each tool call.";
+        McpUsageMiddleware.Record(200);
         return DmcaOperations.LoginResultJson(token, cached, usage);
     }
 
@@ -318,5 +319,9 @@ public sealed class CaseTools
     /// Tool text. Failures are JSON with an "error" field; the MCP extension version used here (1.0.0,
     /// .NET 8) cannot set isError=true on a tool result.
     /// </summary>
-    private static string Finish(OpResult result) => result.Json;
+    private static string Finish(OpResult result)
+    {
+        McpUsageMiddleware.Record(result.Status);
+        return result.Json;
+    }
 }

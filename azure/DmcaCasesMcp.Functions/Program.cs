@@ -8,6 +8,9 @@ var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
+// One App Insights custom event per MCP tool call (tool, outcome, user agent; never args or tokens).
+builder.UseMiddleware<McpUsageMiddleware>();
+
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
