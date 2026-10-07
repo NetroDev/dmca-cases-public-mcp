@@ -1,7 +1,25 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.NetroDev/dmca-cases",
-  "description": "DMCA.com Cases MCP: list/get plus login, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport via Token auth.",
+  "title": "DMCA.com Cases",
+  "description": "DMCA.com takedown cases: list, get, create and update DMCA cases via the DMCA.com API.",
+  "websiteUrl": "https://mcp.dmca.com/",
+  "icons": [
+    {
+      "src": "https://mcp.dmca.com/apple-touch-icon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "180x180"
+      ]
+    },
+    {
+      "src": "https://mcp.dmca.com/dmca-logo.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "601x189"
+      ]
+    }
+  ],
   "repository": {
     "url": "https://github.com/NetroDev/dmca-cases-public-mcp",
     "source": "github"
@@ -18,7 +36,7 @@
       "environmentVariables": [
         {
           "name": "DMCA_API_TOKEN",
-          "description": "DMCA.com API Token header value (from website API section or login).",
+          "description": "Your own DMCA.com API token (sent as the Token header to api.dmca.com). Get it from your DMCA.com account API section or the login tool.",
           "isRequired": true,
           "isSecret": true,
           "format": "string"
@@ -29,12 +47,12 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/runtime/webhooks/mcp",
+      "url": "https://mcp.dmca.com/runtime/webhooks/mcp",
       "headers": [
         {
-          "name": "DMCA_API_TOKEN",
-          "description": "Optional client-supplied token if the Function App is configured to accept it; otherwise the app uses its own DMCA_API_TOKEN app setting.",
-          "isRequired": false,
+          "name": "x-functions-key",
+          "description": "Access key for the hosted DMCA.com Cases MCP endpoint. Issued by DMCA.com on request; requests without it are rejected with 401.",
+          "isRequired": true,
           "isSecret": true
         }
       ]

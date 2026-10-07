@@ -1,0 +1,44 @@
+name: Deploy Azure Functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "azure/DmcaCasesMcp.Functions/**"
+      - ".github/workflows/azure-functions-deploy.yml"
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_NAME: dmca-cases-public-mcp
+  DOTNET_VERSION: "8.0.x"
+  WORKING_DIRECTORY: azure/DmcaCasesMcp.Functions
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build and publish
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+          dotnet publish --configuration Release --no-build --output ./publish
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.WORKING_DIRECTORY }}/publish
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          scm-do-build-during-deployment: false
+          enable-oryx-build: false
