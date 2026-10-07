@@ -19,7 +19,7 @@
       "serverVersion": "1.2.0",
       "encryptClientState": true,
       "system": {
-        "webhookAuthorizationLevel": "Anonymous"
+        "webhookAuthorizationLevel": "System"
       }
     },
     "http": {
