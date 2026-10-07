@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.NetroDev/dmca-cases",
+  "name": "com.dmca/dmca-cases",
   "title": "DMCA.com Cases",
   "description": "DMCA.com takedown cases: list, get, create and update DMCA cases via the DMCA.com API.",
   "websiteUrl": "https://mcp.dmca.com/",

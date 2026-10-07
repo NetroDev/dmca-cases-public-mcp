@@ -50,7 +50,7 @@ Cursor / Claude Desktop:
 }
 ```
 
-Package name: `dmca-cases-mcp` · registry `mcpName`: `io.github.NetroDev/dmca-cases`.
+Package name: `dmca-cases-mcp` · registry `mcpName`: `com.dmca/dmca-cases`.
 
 ## B) Azure Functions (.NET Isolated)
 

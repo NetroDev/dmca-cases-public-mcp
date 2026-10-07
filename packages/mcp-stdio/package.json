@@ -2,7 +2,7 @@
   "name": "dmca-cases-mcp",
   "version": "1.2.0",
   "description": "MCP server for DMCA.com case list/get plus login, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport (stdio).",
-  "mcpName": "io.github.NetroDev/dmca-cases",
+  "mcpName": "com.dmca/dmca-cases",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
