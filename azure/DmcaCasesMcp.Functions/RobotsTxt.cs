@@ -30,7 +30,7 @@ public sealed class RobotsTxt
             Disallow: /api/getSiteReport
             Disallow: /runtime/
 
-            Sitemap: https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/sitemap.xml
+            Sitemap: https://mcp.dmca.com/sitemap.xml
             """;
         await res.WriteStringAsync(body, ct).ConfigureAwait(false);
         return res;

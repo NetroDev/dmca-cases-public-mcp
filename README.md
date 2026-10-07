@@ -54,13 +54,17 @@ Package name: `@netrodev/dmca-cases-mcp` · registry `mcpName`: `io.github.Netro
 
 ## B) Azure Functions (.NET Isolated)
 
-Live Function App:
+Canonical public host:
+
+`https://mcp.dmca.com`
+
+Default Azure hostname (fallback, serves the same app):
 
 `https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net`
 
-Cover: `/cover` · Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, code deploy — not container).
+Cover: `/` (root) and `/cover` (alias) · Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, code deploy — not container).
 
-- MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`)
+- MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`). The protocol endpoint is fixed by the Microsoft MCP extension; `/` is the HTML cover, not the MCP endpoint. Requests need an `x-functions-key` header (the `mcp_extension` system key, issued by DMCA.com on request).
 - Info pointer: `GET /api/mcp`
 - HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (upstream path `/getSiteReport/{domain}`)
 

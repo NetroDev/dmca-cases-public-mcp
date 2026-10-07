@@ -18,7 +18,7 @@ public sealed class SitemapXml
             <?xml version="1.0" encoding="UTF-8"?>
             <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
               <url>
-                <loc>https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/</loc>
+                <loc>https://mcp.dmca.com/</loc>
                 <changefreq>weekly</changefreq>
                 <priority>1.0</priority>
               </url>

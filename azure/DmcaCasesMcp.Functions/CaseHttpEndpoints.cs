@@ -219,8 +219,8 @@ public sealed class CaseHttpEndpoints
         if (string.IsNullOrWhiteSpace(domain))
         {
             var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            await bad.WriteStringAsync("{\"error\":\"query parameter domain is required\"}", ct).ConfigureAwait(false);
             bad.Headers.Add("Content-Type", "application/json");
+            await bad.WriteStringAsync("{\"error\":\"query parameter domain is required\"}", ct).ConfigureAwait(false);
             return bad;
         }
 
@@ -244,8 +244,14 @@ public sealed class CaseHttpEndpoints
           "name": "dmca-cases",
           "version": "1.2.0",
           "policy": "list-get-plus-login-create-update-diy-compliance-site-report",
+          "homepage": "https://mcp.dmca.com/",
+          "canonicalBaseUrl": "https://mcp.dmca.com",
+          "fallbackBaseUrl": "https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net",
           "mcpStreamableHttp": "/runtime/webhooks/mcp",
           "mcpSse": "/runtime/webhooks/mcp/sse",
+          "mcpStreamableHttpUrl": "https://mcp.dmca.com/runtime/webhooks/mcp",
+          "mcpStreamableHttpFallbackUrl": "https://dmca-cases-public-mcp-afdcard8bbdtd4e3.westus3-01.azurewebsites.net/runtime/webhooks/mcp",
+          "cover": ["/", "/cover"],
           "httpToolMirrors": [
             "/api/listCases",
             "/api/listDIYCases",
@@ -258,7 +264,7 @@ public sealed class CaseHttpEndpoints
             "/api/createComplianceCase",
             "/api/getSiteReport"
           ],
-          "note": "Use Microsoft.Azure.Functions.Worker.Extensions.Mcp Streamable HTTP at /runtime/webhooks/mcp. Pass x-functions-key with the mcp_extension system key unless webhookAuthorizationLevel is Anonymous. getSiteReport HTTP mirror uses query ?domain=; upstream calls GET /getSiteReport/{domain}."
+          "note": "GET / (and /cover) serves the HTML cover page. The MCP protocol endpoint is fixed by the Azure Functions MCP extension at /runtime/webhooks/mcp (Streamable HTTP) and /runtime/webhooks/mcp/sse (legacy SSE); it is not served at /. Pass x-functions-key with the mcp_extension system key unless webhookAuthorizationLevel is Anonymous. https://mcp.dmca.com is the canonical host; the azurewebsites.net hostname works as a fallback. getSiteReport HTTP mirror uses query ?domain=; upstream calls GET /getSiteReport/{domain}."
         }
         """;
         await res.WriteStringAsync(body, ct).ConfigureAwait(false);
