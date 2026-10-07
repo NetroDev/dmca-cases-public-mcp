@@ -18,7 +18,7 @@ import {
 } from "./dmcaClient.js";
 
 const SERVER_NAME = "dmca-cases";
-const SERVER_VERSION = "1.2.0";
+const SERVER_VERSION = "1.2.1";
 
 function jsonResult(data: unknown) {
   return {

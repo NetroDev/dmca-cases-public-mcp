@@ -69,11 +69,24 @@ Default Azure hostname (fallback, serves the same app):
 
 Cover: `/` (root) and `/cover` (alias) · Project: `azure/DmcaCasesMcp.Functions` (.NET 8 Isolated, code deploy — not container).
 
-- MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`). The protocol endpoint is fixed by the Microsoft MCP extension; `/` is the HTML cover, not the MCP endpoint. No key is needed (`webhookAuthorizationLevel` is `Anonymous`); each caller authenticates to DMCA.com with the `login` tool.
+- MCP (Functions MCP extension): `/runtime/webhooks/mcp` (and SSE sibling `/runtime/webhooks/mcp/sse`). The protocol endpoint is fixed by the Microsoft MCP extension; `/` is the HTML cover, not the MCP endpoint. No function key is needed (`webhookAuthorizationLevel` is `Anonymous`). Each caller sends their own DMCA.com API token as `Authorization: Bearer <token>` (or passes `token`, or calls `login`).
 - Info pointer: `GET /api/mcp`
 - HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (upstream path `/getSiteReport/{domain}`)
 
-No DMCA token app setting: each caller signs in with `login` (or passes `token`).
+Remote client config (Cursor / any Streamable HTTP client):
+
+```json
+{
+  "mcpServers": {
+    "dmca-cases": {
+      "url": "https://mcp.dmca.com/runtime/webhooks/mcp",
+      "headers": { "Authorization": "Bearer <your DMCA.com API token>" }
+    }
+  }
+}
+```
+
+The token is the one from your DMCA.com account's API section (or from the `login` tool). There is no DMCA token app setting and no shared server token.
 
 Deploy (after `dotnet` + Azure Functions Core Tools are available):
 

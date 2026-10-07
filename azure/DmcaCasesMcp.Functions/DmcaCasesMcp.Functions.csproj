@@ -10,7 +10,7 @@
     <Authors>DMCA MCP Cases</Authors>
     <Company>DMCA MCP Cases</Company>
     <Description>DMCA.com cases MCP over Azure Functions (Isolated .NET 8): list/get, login, createCase, createDIYCase, createComplianceCase, updateCase, getSiteReport.</Description>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

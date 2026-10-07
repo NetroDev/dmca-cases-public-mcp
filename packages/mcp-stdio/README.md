@@ -46,4 +46,8 @@ npx -y dmca-cases-mcp
 }
 ```
 
+No environment variables are needed. Call `login` once per session, or pass your DMCA.com API token as `token` on each call.
+
+Hosted alternative (no install, no function key): Streamable HTTP at `https://mcp.dmca.com/runtime/webhooks/mcp` with header `Authorization: Bearer <your DMCA.com API token>`.
+
 Responses are returned as the upstream JSON body (stringified), without invented schemas.

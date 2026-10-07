@@ -192,7 +192,7 @@ public sealed class CaseHttpEndpoints
         const string body = """
         {
           "name": "dmca-cases",
-          "version": "1.2.0",
+          "version": "1.2.1",
           "policy": "list-get-plus-login-create-update-diy-compliance-site-report",
           "homepage": "https://mcp.dmca.com/",
           "canonicalBaseUrl": "https://mcp.dmca.com",
@@ -214,7 +214,7 @@ public sealed class CaseHttpEndpoints
             "/api/createComplianceCase",
             "/api/getSiteReport"
           ],
-          "note": "GET / (and /cover) serves the HTML cover page. The MCP protocol endpoint is fixed by the Azure Functions MCP extension at /runtime/webhooks/mcp (Streamable HTTP) and /runtime/webhooks/mcp/sse (legacy SSE); it is not served at /. No x-functions-key is needed for the MCP endpoint (webhookAuthorizationLevel is Anonymous); callers sign in to DMCA.com with the login tool. https://mcp.dmca.com is the canonical host; the azurewebsites.net hostname works as a fallback. getSiteReport HTTP mirror uses query ?domain=; upstream calls GET /getSiteReport/{domain}."
+          "note": "GET / (and /cover) serves the HTML cover page. The MCP protocol endpoint is fixed by the Azure Functions MCP extension at /runtime/webhooks/mcp (Streamable HTTP) and /runtime/webhooks/mcp/sse (legacy SSE); it is not served at /. No x-functions-key is needed for the MCP endpoint (webhookAuthorizationLevel is Anonymous); callers send their own DMCA.com API token as Authorization: Bearer <token> (or pass token, or call the login tool). https://mcp.dmca.com is the canonical host; the azurewebsites.net hostname works as a fallback. getSiteReport HTTP mirror uses query ?domain=; upstream calls GET /getSiteReport/{domain}."
         }
         """;
         await res.WriteStringAsync(body, ct).ConfigureAwait(false);
