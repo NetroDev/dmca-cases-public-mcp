@@ -1,42 +1,44 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Extensions.Logging;
 
 namespace DmcaCasesMcp.Functions;
 
 /// <summary>
 /// Honest 1:1 HTTP mirrors of MCP tools under /api/...
 /// Useful for curl/health checks; MCP clients should prefer /runtime/webhooks/mcp.
+/// Token per request: `token` (query string or JSON body), then the X-DMCA-Token or Token header,
+/// then the DMCA_API_TOKEN app setting. Tokens and passwords are never logged.
 /// </summary>
 public sealed class CaseHttpEndpoints
 {
-    private readonly DmcaApiClient _client;
-    private readonly ILogger<CaseHttpEndpoints> _logger;
+    private readonly DmcaOperations _ops;
+    private readonly DmcaTokenResolver _tokens;
 
-    public CaseHttpEndpoints(DmcaApiClient client, ILogger<CaseHttpEndpoints> logger)
+    public CaseHttpEndpoints(DmcaOperations ops, DmcaTokenResolver tokens)
     {
-        _client = client;
-        _logger = logger;
+        _ops = ops;
+        _tokens = tokens;
     }
 
     [Function("HttpListCases")]
     public Task<HttpResponseData> ListCases(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/listCases")] HttpRequestData req,
         CancellationToken ct)
-        => ProxyGet(req, "/listCases", CopyQuery(req, "page"), ct);
+        => List(req, "/listCases", ct);
 
     [Function("HttpListDiyCases")]
     public Task<HttpResponseData> ListDiyCases(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/listDIYCases")] HttpRequestData req,
         CancellationToken ct)
-        => ProxyGet(req, "/listDIYCases", CopyQuery(req, "page"), ct);
+        => List(req, "/listDIYCases", ct);
 
     [Function("HttpListComplianceCases")]
     public Task<HttpResponseData> ListComplianceCases(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/listComplianceCases")] HttpRequestData req,
         CancellationToken ct)
-        => ProxyGet(req, "/listComplianceCases", CopyQuery(req, "page"), ct);
+        => List(req, "/listComplianceCases", ct);
 
     [Function("HttpGetCaseById")]
     public async Task<HttpResponseData> GetCaseById(
@@ -46,34 +48,35 @@ public sealed class CaseHttpEndpoints
         var id = GetQuery(req, "id");
         if (string.IsNullOrWhiteSpace(id))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            await bad.WriteStringAsync("{\"error\":\"query parameter id is required\"}", ct).ConfigureAwait(false);
-            bad.Headers.Add("Content-Type", "application/json");
-            return bad;
+            return await Respond(req, OpResult.Error(400, "query parameter id is required"), ct).ConfigureAwait(false);
         }
 
-        return await ProxyGet(req, "/getCaseById", new Dictionary<string, string?> { ["id"] = id }, ct)
+        var result = await _ops.GetAsync("/getCaseById", new Dictionary<string, string?> { ["id"] = id }, Token(req, null), ct)
             .ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
     }
-
 
     [Function("HttpLogin")]
     public async Task<HttpResponseData> Login(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/login")] HttpRequestData req,
         CancellationToken ct)
     {
-        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
-        var root = doc.RootElement;
-        var email = root.TryGetProperty("email", out var e) ? e.GetString() : null;
-        var password = root.TryGetProperty("password", out var pw) ? pw.GetString() : null;
+        var body = await ReadBody(req, ct).ConfigureAwait(false);
+        var email = Get(body, "email");
+        var password = Get(body, "password");
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            bad.Headers.Add("Content-Type", "application/json");
-            await bad.WriteStringAsync("{\"error\":\"email and password are required\"}", ct).ConfigureAwait(false);
-            return bad;
+            return await Respond(req, OpResult.Error(400, "email and password are required"), ct).ConfigureAwait(false);
         }
-        return await ProxyPost(req, "/login", new { email, password }, withToken: false, ct).ConfigureAwait(false);
+
+        var (result, token) = await _ops.LoginAsync(email, password, ct).ConfigureAwait(false);
+        if (token is not null)
+        {
+            result = OpResult.Ok(DmcaOperations.LoginResultJson(token, sessionCached: false,
+                "Send this token on later requests as the X-DMCA-Token header (or a `token` field). The HTTP mirrors do not keep sessions."));
+        }
+
+        return await Respond(req, result, ct).ConfigureAwait(false);
     }
 
     [Function("HttpCreateCase")]
@@ -81,25 +84,18 @@ public sealed class CaseHttpEndpoints
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/createCase")] HttpRequestData req,
         CancellationToken ct)
     {
-        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
-        var root = doc.RootElement;
-        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
-        var subject = Get("subject");
-        var description = Get("description");
+        var body = await ReadBody(req, ct).ConfigureAwait(false);
+        var subject = Get(body, "subject");
+        var description = Get(body, "description");
         if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            bad.Headers.Add("Content-Type", "application/json");
-            await bad.WriteStringAsync("{\"error\":\"subject and description are required\"}", ct).ConfigureAwait(false);
-            return bad;
+            return await Respond(req, OpResult.Error(400, "subject and description are required"), ct).ConfigureAwait(false);
         }
+
         var payload = new Dictionary<string, object?> { ["subject"] = subject, ["description"] = description };
-        foreach (var k in new[] { "copiedFromUrl", "infringingUrl", "infringingSiteIp" })
-        {
-            var v = Get(k);
-            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
-        }
-        return await ProxyPost(req, "/createCase", payload, withToken: true, ct).ConfigureAwait(false);
+        CopyOptional(body, payload, "copiedFromUrl", "infringingUrl", "infringingSiteIp");
+        var result = await _ops.PostAsync("/createCase", payload, Token(req, body), ct).ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
     }
 
     [Function("HttpUpdateCase")]
@@ -107,68 +103,45 @@ public sealed class CaseHttpEndpoints
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/updateCase")] HttpRequestData req,
         CancellationToken ct)
     {
-        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
-        var root = doc.RootElement;
-        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
-        var caseId = Get("case_id");
-        var status = Get("status");
-        var subject = Get("subject");
-        var description = Get("description");
-        if (string.IsNullOrWhiteSpace(caseId) || string.IsNullOrWhiteSpace(status)
-            || string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description))
+        var body = await ReadBody(req, ct).ConfigureAwait(false);
+        var caseId = Get(body, "case_id");
+        var subject = Get(body, "subject");
+        var description = Get(body, "description");
+        if (string.IsNullOrWhiteSpace(caseId) || string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            bad.Headers.Add("Content-Type", "application/json");
-            await bad.WriteStringAsync("{\"error\":\"case_id, status, subject, and description are required\"}", ct).ConfigureAwait(false);
-            return bad;
+            return await Respond(req, OpResult.Error(400, "case_id, subject, and description are required"), ct).ConfigureAwait(false);
         }
-        var payload = new Dictionary<string, object?>
-        {
-            ["case_id"] = caseId,
-            ["status"] = status,
-            ["subject"] = subject,
-            ["description"] = description,
-        };
-        foreach (var k in new[] { "copiedFromUrl", "infringingUrl", "infringingSiteIp", "priority" })
-        {
-            var v = Get(k);
-            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
-        }
-        return await ProxyPost(req, "/updateCase", payload, withToken: true, ct).ConfigureAwait(false);
-    }
 
+        var result = await _ops.UpdateCaseAsync(
+            caseId, Get(body, "status"), Get(body, "priority"), subject, description,
+            Get(body, "copiedFromUrl"), Get(body, "infringingUrl"), Get(body, "infringingSiteIp"),
+            Token(req, body), ct).ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
+    }
 
     [Function("HttpCreateDiyCase")]
     public async Task<HttpResponseData> CreateDiyCase(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/createDIYCase")] HttpRequestData req,
         CancellationToken ct)
     {
-        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
-        var root = doc.RootElement;
-        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
-        var subject = Get("subject");
-        var description = Get("description");
-        var type = Get("type");
-        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description)
-            || string.IsNullOrWhiteSpace(type))
+        var body = await ReadBody(req, ct).ConfigureAwait(false);
+        var subject = Get(body, "subject");
+        var description = Get(body, "description");
+        var type = Get(body, "type");
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description) || string.IsNullOrWhiteSpace(type))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            bad.Headers.Add("Content-Type", "application/json");
-            await bad.WriteStringAsync("{\"error\":\"subject, description, and type are required\"}", ct).ConfigureAwait(false);
-            return bad;
+            return await Respond(req, OpResult.Error(400, "subject, description, and type are required"), ct).ConfigureAwait(false);
         }
+
         var payload = new Dictionary<string, object?>
         {
             ["subject"] = subject,
             ["description"] = description,
             ["type"] = type,
         };
-        foreach (var k in new[] { "copiedFromUrl", "infringingUrl", "infringingSiteIp" })
-        {
-            var v = Get(k);
-            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
-        }
-        return await ProxyPost(req, "/createDIYCase", payload, withToken: true, ct).ConfigureAwait(false);
+        CopyOptional(body, payload, "copiedFromUrl", "infringingUrl", "infringingSiteIp");
+        var result = await _ops.PostAsync("/createDIYCase", payload, Token(req, body), ct).ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
     }
 
     [Function("HttpCreateComplianceCase")]
@@ -176,37 +149,18 @@ public sealed class CaseHttpEndpoints
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/createComplianceCase")] HttpRequestData req,
         CancellationToken ct)
     {
-        using var doc = await System.Text.Json.JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
-        var root = doc.RootElement;
-        string? Get(string n) => root.TryGetProperty(n, out var el) ? el.GetString() : null;
-        var submitterEmail = Get("submitterEmail");
-        var submitterFirstName = Get("submitterFirstName");
-        var submitterLastName = Get("submitterLastName");
-        var description = Get("description");
-        var siteId = Get("siteId");
-        if (string.IsNullOrWhiteSpace(submitterEmail) || string.IsNullOrWhiteSpace(submitterFirstName)
-            || string.IsNullOrWhiteSpace(submitterLastName) || string.IsNullOrWhiteSpace(description)
-            || string.IsNullOrWhiteSpace(siteId))
+        var body = await ReadBody(req, ct).ConfigureAwait(false);
+        var required = new[] { "submitterEmail", "submitterFirstName", "submitterLastName", "description", "siteId" };
+        if (required.Any(k => string.IsNullOrWhiteSpace(Get(body, k))))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            bad.Headers.Add("Content-Type", "application/json");
-            await bad.WriteStringAsync("{\"error\":\"submitterEmail, submitterFirstName, submitterLastName, description, and siteId are required\"}", ct).ConfigureAwait(false);
-            return bad;
+            return await Respond(req, OpResult.Error(400,
+                "submitterEmail, submitterFirstName, submitterLastName, description, and siteId are required"), ct).ConfigureAwait(false);
         }
-        var payload = new Dictionary<string, object?>
-        {
-            ["submitterEmail"] = submitterEmail,
-            ["submitterFirstName"] = submitterFirstName,
-            ["submitterLastName"] = submitterLastName,
-            ["description"] = description,
-            ["siteId"] = siteId,
-        };
-        foreach (var k in new[] { "submitterCompanyName", "copiedFromUrl", "infringingUrl", "infringingSiteIp" })
-        {
-            var v = Get(k);
-            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
-        }
-        return await ProxyPost(req, "/createComplianceCase", payload, withToken: true, ct).ConfigureAwait(false);
+
+        var payload = required.ToDictionary(k => k, k => (object?)Get(body, k));
+        CopyOptional(body, payload, "submitterCompanyName", "copiedFromUrl", "infringingUrl", "infringingSiteIp");
+        var result = await _ops.PostAsync("/createComplianceCase", payload, Token(req, body), ct).ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
     }
 
     [Function("HttpGetSiteReport")]
@@ -218,14 +172,12 @@ public sealed class CaseHttpEndpoints
         var domain = GetQuery(req, "domain");
         if (string.IsNullOrWhiteSpace(domain))
         {
-            var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            bad.Headers.Add("Content-Type", "application/json");
-            await bad.WriteStringAsync("{\"error\":\"query parameter domain is required\"}", ct).ConfigureAwait(false);
-            return bad;
+            return await Respond(req, OpResult.Error(400, "query parameter domain is required"), ct).ConfigureAwait(false);
         }
 
         var path = "/getSiteReport/" + Uri.EscapeDataString(domain.Trim());
-        return await ProxyGet(req, path, null, ct).ConfigureAwait(false);
+        var result = await _ops.GetAsync(path, null, Token(req, null), ct).ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -271,84 +223,67 @@ public sealed class CaseHttpEndpoints
         return res;
     }
 
-    private async Task<HttpResponseData> ProxyGet(
-        HttpRequestData req,
-        string path,
-        IDictionary<string, string?>? query,
-        CancellationToken ct)
+    private async Task<HttpResponseData> List(HttpRequestData req, string path, CancellationToken ct)
+    {
+        int? page = int.TryParse(GetQuery(req, "page"), out var p) ? p : null;
+        var result = await _ops.ListAsync(path, page, Token(req, null), ct).ConfigureAwait(false);
+        return await Respond(req, result, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>`token` field/query, then X-DMCA-Token / Token header, then the app setting.</summary>
+    private ResolvedToken? Token(HttpRequestData req, JsonElement? body)
+    {
+        var explicitToken = (body is { } b ? Get(b, "token") : null) ?? GetQuery(req, "token");
+        if (!string.IsNullOrWhiteSpace(explicitToken))
+        {
+            return new ResolvedToken(explicitToken.Trim(), TokenSource.Argument);
+        }
+
+        foreach (var name in new[] { DmcaTokenResolver.TokenHeaderName, "Token" })
+        {
+            if (req.Headers.TryGetValues(name, out var values))
+            {
+                var value = values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                if (value is not null) return new ResolvedToken(value.Trim(), TokenSource.Header);
+            }
+        }
+
+        return _tokens.ResolveFallback();
+    }
+
+    private static async Task<HttpResponseData> Respond(HttpRequestData req, OpResult result, CancellationToken ct)
+    {
+        var res = req.CreateResponse((HttpStatusCode)result.Status);
+        res.Headers.Add("Content-Type", "application/json");
+        await res.WriteStringAsync(result.Json, ct).ConfigureAwait(false);
+        return res;
+    }
+
+    private static async Task<JsonElement> ReadBody(HttpRequestData req, CancellationToken ct)
     {
         try
         {
-            var json = await _client.GetRawAsync(path, query, ct).ConfigureAwait(false);
-            var ok = req.CreateResponse(HttpStatusCode.OK);
-            ok.Headers.Add("Content-Type", "application/json");
-            await ok.WriteStringAsync(json, ct).ConfigureAwait(false);
-            return ok;
+            using var doc = await JsonDocument.ParseAsync(req.Body, cancellationToken: ct).ConfigureAwait(false);
+            return doc.RootElement.Clone();
         }
-        catch (DmcaApiException ex)
+        catch (JsonException)
         {
-            _logger.LogWarning("Upstream error {Path} HTTP {Status}", path, ex.StatusCode);
-            var res = req.CreateResponse((HttpStatusCode)ex.StatusCode);
-            res.Headers.Add("Content-Type", "application/json");
-            await res.WriteStringAsync(ex.ResponseBody, ct).ConfigureAwait(false);
-            return res;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Proxy failure for {Path}", path);
-            var res = req.CreateResponse(HttpStatusCode.InternalServerError);
-            res.Headers.Add("Content-Type", "application/json");
-            await res.WriteStringAsync($"{{\"error\":{System.Text.Json.JsonSerializer.Serialize(ex.Message)}}}", ct)
-                .ConfigureAwait(false);
-            return res;
+            return default;
         }
     }
 
+    private static string? Get(JsonElement? body, string name)
+        => body is { ValueKind: JsonValueKind.Object } b && b.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.String
+            ? el.GetString()
+            : null;
 
-    private async Task<HttpResponseData> ProxyPost(
-        HttpRequestData req,
-        string path,
-        object payload,
-        bool withToken,
-        CancellationToken ct)
+    private static void CopyOptional(JsonElement body, Dictionary<string, object?> payload, params string[] keys)
     {
-        try
+        foreach (var k in keys)
         {
-            var json = await _client.PostRawAsync(path, payload, withToken, ct).ConfigureAwait(false);
-            var ok = req.CreateResponse(HttpStatusCode.OK);
-            ok.Headers.Add("Content-Type", "application/json");
-            await ok.WriteStringAsync(json, ct).ConfigureAwait(false);
-            return ok;
+            var v = Get(body, k);
+            if (!string.IsNullOrWhiteSpace(v)) payload[k] = v;
         }
-        catch (DmcaApiException ex)
-        {
-            _logger.LogWarning("Upstream error {Path} HTTP {Status}", path, ex.StatusCode);
-            var res = req.CreateResponse((HttpStatusCode)ex.StatusCode);
-            res.Headers.Add("Content-Type", "application/json");
-            await res.WriteStringAsync(ex.ResponseBody, ct).ConfigureAwait(false);
-            return res;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Proxy failure for {Path}", path);
-            var res = req.CreateResponse(HttpStatusCode.InternalServerError);
-            res.Headers.Add("Content-Type", "application/json");
-            await res.WriteStringAsync($"{{\"error\":{System.Text.Json.JsonSerializer.Serialize(ex.Message)}}}", ct)
-                .ConfigureAwait(false);
-            return res;
-        }
-    }
-
-    private static Dictionary<string, string?>? CopyQuery(HttpRequestData req, params string[] keys)
-    {
-        var dict = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var key in keys)
-        {
-            var v = GetQuery(req, key);
-            if (!string.IsNullOrEmpty(v)) dict[key] = v;
-        }
-
-        return dict.Count == 0 ? null : dict;
     }
 
     private static string? GetQuery(HttpRequestData req, string key)

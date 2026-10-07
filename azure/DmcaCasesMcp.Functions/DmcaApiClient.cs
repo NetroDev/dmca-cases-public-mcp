@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DmcaCasesMcp.Functions;
@@ -15,41 +14,23 @@ public sealed class DmcaApiClient
     public const string ApiBase = "https://api.dmca.com";
 
     private readonly HttpClient _http;
-    private readonly IConfiguration _config;
     private readonly ILogger<DmcaApiClient> _logger;
 
-    public DmcaApiClient(HttpClient http, IConfiguration config, ILogger<DmcaApiClient> logger)
+    public DmcaApiClient(HttpClient http, ILogger<DmcaApiClient> logger)
     {
         _http = http;
-        _config = config;
         _logger = logger;
         _http.BaseAddress = new Uri(ApiBase);
         _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
-    private string ResolveToken()
-    {
-        var token = _config["DMCA_API_TOKEN"]
-            ?? _config["DMCA_TOKEN"]
-            ?? Environment.GetEnvironmentVariable("DMCA_API_TOKEN")
-            ?? Environment.GetEnvironmentVariable("DMCA_TOKEN");
-
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new InvalidOperationException(
-                "Missing DMCA API token. Set DMCA_API_TOKEN (or DMCA_TOKEN) app setting / environment variable.");
-        }
-
-        return token.Trim();
-    }
-
     /// <summary>
-    /// GET a DMCA.com path. <paramref name="path"/> may include path segments
-    /// (e.g. <c>/getSiteReport/{domain}</c>); optional <paramref name="query"/> is appended as query string.
+    /// GET a DMCA.com path with the given token sent as the <c>Token</c> header.
+    /// <paramref name="path"/> may include path segments (e.g. <c>/getSiteReport/{domain}</c>);
+    /// optional <paramref name="query"/> is appended as query string.
     /// </summary>
-    public async Task<string> GetRawAsync(string path, IDictionary<string, string?>? query = null, CancellationToken ct = default)
+    public async Task<string> GetRawAsync(string path, IDictionary<string, string?>? query, string token, CancellationToken ct = default)
     {
-        var token = ResolveToken();
         var uri = BuildUri(path, query);
 
         using var req = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -58,33 +39,22 @@ public sealed class DmcaApiClient
         _logger.LogInformation("DMCA GET {Path}", path);
 
         using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-
-        if (!res.IsSuccessStatusCode)
-        {
-            var envelope = JsonSerializer.Serialize(new
-            {
-                error = $"DMCA API {path} returned HTTP {(int)res.StatusCode}",
-                status = (int)res.StatusCode,
-                body = TryParseJson(body)
-            });
-            throw new DmcaApiException((int)res.StatusCode, envelope);
-        }
-
-        return string.IsNullOrWhiteSpace(body) ? "null" : body;
+        var body = Unwrap(await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+        ThrowIfNotOk(path, res, body);
+        return body;
     }
 
     /// <summary>
-    /// POST JSON. When withToken is true, sends Token header from app settings.
-    /// Never logs request body (may contain password) or token values.
+    /// POST JSON. When <paramref name="token"/> is non-null it is sent as the <c>Token</c> header
+    /// (login passes null). Never logs request body (may contain password) or token values.
     /// </summary>
-    public async Task<string> PostRawAsync(string path, object payload, bool withToken = true, CancellationToken ct = default)
+    public async Task<string> PostRawAsync(string path, object payload, string? token, CancellationToken ct = default)
     {
         var uri = BuildUri(path, null);
         using var req = new HttpRequestMessage(HttpMethod.Post, uri);
-        if (withToken)
+        if (token is not null)
         {
-            req.Headers.TryAddWithoutValidation("Token", ResolveToken());
+            req.Headers.TryAddWithoutValidation("Token", token);
         }
 
         var json = JsonSerializer.Serialize(payload);
@@ -93,20 +63,51 @@ public sealed class DmcaApiClient
         _logger.LogInformation("DMCA POST {Path}", path);
 
         using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var body = Unwrap(await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+        ThrowIfNotOk(path, res, body);
+        return body;
+    }
 
-        if (!res.IsSuccessStatusCode)
+    /// <summary>
+    /// When asked for JSON the DMCA API wraps its payload in a JSON string (e.g. <c>"[{\"ID\":...}]"</c>,
+    /// or <c>""</c> for an empty 404). Unwrap one level so callers get the real JSON; an empty
+    /// wrapped string becomes an empty body.
+    /// </summary>
+    internal static string Unwrap(string body)
+    {
+        var trimmed = body.Trim();
+        if (!trimmed.StartsWith('"')) return body;
+        try
         {
-            var envelope = JsonSerializer.Serialize(new
+            using var doc = JsonDocument.Parse(trimmed);
+            if (doc.RootElement.ValueKind != JsonValueKind.String) return body;
+            var inner = (doc.RootElement.GetString() ?? string.Empty).Trim();
+            if (inner.Length == 0) return string.Empty;
+            if (inner.StartsWith('[') || inner.StartsWith('{'))
             {
-                error = $"DMCA API {path} returned HTTP {(int)res.StatusCode}",
-                status = (int)res.StatusCode,
-                body = TryParseJson(body)
-            });
-            throw new DmcaApiException((int)res.StatusCode, envelope);
+                using var _ = JsonDocument.Parse(inner);
+                return inner;
+            }
+        }
+        catch (JsonException)
+        {
         }
 
-        return string.IsNullOrWhiteSpace(body) ? "null" : body;
+        return body;
+    }
+
+    private static void ThrowIfNotOk(string path, HttpResponseMessage res, string body)
+    {
+        if (res.IsSuccessStatusCode) return;
+
+        var status = (int)res.StatusCode;
+        var envelope = JsonSerializer.Serialize(new
+        {
+            error = $"DMCA API {path} returned HTTP {status}",
+            status,
+            body = TryParseJson(body)
+        });
+        throw new DmcaApiException(status, envelope, body);
     }
 
     private static Uri BuildUri(string path, IDictionary<string, string?>? query)
@@ -146,12 +147,18 @@ public sealed class DmcaApiClient
 public sealed class DmcaApiException : Exception
 {
     public int StatusCode { get; }
+
+    /// <summary>JSON error envelope (error, status, body) suitable for returning to callers.</summary>
     public string ResponseBody { get; }
 
-    public DmcaApiException(int statusCode, string responseBody)
+    /// <summary>Upstream response body exactly as received (may be empty).</summary>
+    public string RawBody { get; }
+
+    public DmcaApiException(int statusCode, string responseBody, string rawBody)
         : base($"DMCA API HTTP {statusCode}")
     {
         StatusCode = statusCode;
         ResponseBody = responseBody;
+        RawBody = rawBody;
     }
 }

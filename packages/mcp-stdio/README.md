@@ -17,11 +17,11 @@ stdio MCP server for DMCA.com case **list**, **get**, **login**, **createCase**,
 | `updateCase` | `POST https://api.dmca.com/updateCase` |
 | `getSiteReport` | `GET https://api.dmca.com/getSiteReport/{domain}` |
 
-`createCase`, `createDIYCase`, `createComplianceCase`, `updateCase`, and `getSiteReport` require `DMCA_API_TOKEN` (Token header).
+Every tool except `login` sends a DMCA API token as the `Token` header: the tool's optional `token` argument if given, otherwise the token from this session's `login`, otherwise `DMCA_API_TOKEN`. `updateCase` keeps status and priority unless you pass them.
 
 ## Env
 
-- `DMCA_API_TOKEN` (preferred) or `DMCA_TOKEN` — sent as HTTP header `Token`. Never logged.
+- `DMCA_API_TOKEN` (preferred) or `DMCA_TOKEN` — optional fallback token, sent as HTTP header `Token` when the session has not logged in and no `token` argument is given. Never logged.
 
 ## Run
 

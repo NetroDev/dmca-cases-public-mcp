@@ -13,22 +13,32 @@ builder.Services
     .ConfigureFunctionsApplicationInsights();
 
 builder.Services.AddHttpClient<DmcaApiClient>();
+builder.Services.AddSingleton<SessionTokenCache>();
+builder.Services.AddSingleton<DmcaTokenResolver>();
+builder.Services.AddTransient<DmcaOperations>();
+
+const string token = "token";
+const string tokenDescription = CaseTools.TokenDescription;
 
 builder
     .ConfigureMcpTool("listCases")
-    .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false);
+    .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("listDIYCases")
-    .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false);
+    .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("listComplianceCases")
-    .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false);
+    .WithProperty("page", "number", "Optional page number (max 50 results per page).", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("getCaseById")
-    .WithProperty("id", "string", "Case ID returned by listCases (or equivalent).", required: true);
+    .WithProperty("id", "string", "Case ID returned by listCases (or equivalent).", required: true)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("login")
@@ -41,19 +51,20 @@ builder
     .WithProperty("description", "string", "Case description.", required: true)
     .WithProperty("copiedFromUrl", "string", "Optional original / copied-from URL.", required: false)
     .WithProperty("infringingUrl", "string", "Optional infringing URL.", required: false)
-    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false);
+    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("updateCase")
     .WithProperty("case_id", "string", "Case ID to update.", required: true)
-    .WithProperty("status", "string", "Case status.", required: true)
     .WithProperty("subject", "string", "Case subject.", required: true)
     .WithProperty("description", "string", "Case description.", required: true)
+    .WithProperty("status", "string", "Optional new case status. Left unchanged when omitted.", required: false)
     .WithProperty("copiedFromUrl", "string", "Optional original / copied-from URL.", required: false)
     .WithProperty("infringingUrl", "string", "Optional infringing URL.", required: false)
     .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false)
-    .WithProperty("priority", "string", "Optional priority.", required: false);
-
+    .WithProperty("priority", "string", "Optional new priority. Left unchanged when omitted.", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("createDIYCase")
@@ -62,7 +73,8 @@ builder
     .WithProperty("type", "string", "DIY case type: Business - General | Personal - General | Toolkit Business Request CAN|EU|India | Toolkit Personal Request CAN|EU|India.", required: true)
     .WithProperty("copiedFromUrl", "string", "Optional original / copied-from URL.", required: false)
     .WithProperty("infringingUrl", "string", "Optional infringing URL.", required: false)
-    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false);
+    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("createComplianceCase")
@@ -74,10 +86,12 @@ builder
     .WithProperty("submitterCompanyName", "string", "Optional submitter company name.", required: false)
     .WithProperty("copiedFromUrl", "string", "Optional original / copied-from URL.", required: false)
     .WithProperty("infringingUrl", "string", "Optional infringing URL.", required: false)
-    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false);
+    .WithProperty("infringingSiteIp", "string", "Optional infringing site IP.", required: false)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder
     .ConfigureMcpTool("getSiteReport")
-    .WithProperty("domain", "string", "Fully qualified domain name (upstream path /getSiteReport/{domain}).", required: true);
+    .WithProperty("domain", "string", "Fully qualified domain name (upstream path /getSiteReport/{domain}).", required: true)
+    .WithProperty(token, "string", tokenDescription, required: false);
 
 builder.Build().Run();

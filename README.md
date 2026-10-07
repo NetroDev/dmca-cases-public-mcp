@@ -21,9 +21,16 @@ Maintained as **DMCA MCP Cases**.
 
 **Not** exposed: `register`, badge/protected-item APIs, XARF.
 
-Auth: env `DMCA_API_TOKEN` (or `DMCA_TOKEN`) sent as HTTP header `Token`. `login` can mint a token. Never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
+Auth: every tool except `login` sends a DMCA API token as HTTP header `Token`. The token is picked per call, in this order:
 
-`createCase`, `createDIYCase`, `createComplianceCase`, and `updateCase` require a valid Token (`DMCA_API_TOKEN`). `getSiteReport` also sends Token.
+1. the tool's optional `token` argument;
+2. the token from this caller's successful `login` in the same MCP session (stdio: the process; remote: the MCP session id, kept in server memory for up to 12 hours, max 1000 sessions);
+3. remote only: an `X-DMCA-Token` header on the MCP HTTP request;
+4. the server's `DMCA_API_TOKEN` (or `DMCA_TOKEN`) env var / app setting.
+
+So a user who calls `login` with their own DMCA.com credentials creates and reads cases under their own account. Tokens and passwords are never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
+
+`updateCase` leaves status and priority unchanged unless you pass them (the upstream API clears them when they are omitted, so the server re-sends the current values). List tools return `{"cases": [], "count": 0, ...}` when the upstream API reports no cases (it answers `/listDIYCases` with an empty HTTP 404).
 
 Canonical docs: [www.dmca.com/api](https://www.dmca.com/api/) · OpenAPI [2.1.2](https://api.swaggerhub.com/apis/dmca/dmca-api/2.1.2) · host `https://api.dmca.com`.
 
@@ -68,7 +75,7 @@ Cover: `/` (root) and `/cover` (alias) · Project: `azure/DmcaCasesMcp.Functions
 - Info pointer: `GET /api/mcp`
 - HTTP mirrors: `/api/listCases`, `/api/listDIYCases`, `/api/listComplianceCases`, `/api/getCaseById`, `/api/login`, `/api/createCase`, `/api/updateCase`, `/api/createDIYCase`, `/api/createComplianceCase`, `/api/getSiteReport?domain=` (upstream path `/getSiteReport/{domain}`)
 
-App setting: `DMCA_API_TOKEN`.
+App setting: `DMCA_API_TOKEN` (fallback token when the caller has not logged in or passed `token`).
 
 Deploy (after `dotnet` + Azure Functions Core Tools are available):
 

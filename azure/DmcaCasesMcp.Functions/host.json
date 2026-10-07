@@ -14,7 +14,7 @@
   },
   "extensions": {
     "mcp": {
-      "instructions": "DMCA.com cases MCP. Tools: login, listCases, listDIYCases, listComplianceCases, getCaseById, createCase, updateCase, createDIYCase, createComplianceCase, getSiteReport. Requires DMCA_API_TOKEN app setting (sent as Token header to api.dmca.com) for create/update and most reads. getSiteReport uses upstream path /getSiteReport/{domain}.",
+      "instructions": "DMCA.com cases MCP. Tools: login, listCases, listDIYCases, listComplianceCases, getCaseById, createCase, updateCase, createDIYCase, createComplianceCase, getSiteReport. Call login with the user's DMCA.com email/password first: it returns a DMCA API token that is reused automatically for the rest of this MCP session, so cases are created under that user's account. Every other tool also takes an optional token argument (the token from login), which always takes priority; pass it explicitly if a call returns HTTP 401. Without login or token the server falls back to its DMCA_API_TOKEN app setting. updateCase keeps status and priority unchanged unless you pass them. getSiteReport uses upstream path /getSiteReport/{domain}.",
       "serverName": "dmca-cases",
       "serverVersion": "1.2.0",
       "encryptClientState": true,
