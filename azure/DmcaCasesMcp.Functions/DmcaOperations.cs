@@ -171,7 +171,7 @@ public sealed class DmcaOperations
 
     private OpResult MissingToken(string path)
     {
-        _logger.LogInformation("DMCA {Path}: caller is not logged in and passed no token", path);
+        _logger.LogInformation("DMCA {Path}: caller sent no token and is not logged in", path);
         return OpResult.Error(401, NotLoggedIn.Message);
     }
 

@@ -38,7 +38,15 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://mcp.dmca.com/runtime/webhooks/mcp"
+      "url": "https://mcp.dmca.com/runtime/webhooks/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Optional. \"Bearer <your DMCA.com API token>\" so every tool call uses your own account. Without it, call the login tool first or pass token on each call.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
     }
   ]
 }

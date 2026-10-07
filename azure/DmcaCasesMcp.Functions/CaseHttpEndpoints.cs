@@ -9,7 +9,7 @@ namespace DmcaCasesMcp.Functions;
 /// Honest 1:1 HTTP mirrors of MCP tools under /api/...
 /// Useful for curl/health checks; MCP clients should prefer /runtime/webhooks/mcp.
 /// The caller supplies their own token per request: `token` (query string or JSON body) or the
-/// X-DMCA-Token / Token header. There is no server-wide token. Tokens and passwords are never logged.
+/// Authorization: Bearer / X-DMCA-Token / Token header. There is no server-wide token. Tokens and passwords are never logged.
 /// </summary>
 public sealed class CaseHttpEndpoints
 {
@@ -228,13 +228,19 @@ public sealed class CaseHttpEndpoints
         return await Respond(req, result, ct).ConfigureAwait(false);
     }
 
-    /// <summary>`token` field/query, then the X-DMCA-Token / Token header. Null when the caller sent none.</summary>
+    /// <summary>`token` field/query, then Authorization: Bearer, X-DMCA-Token or Token header. Null when the caller sent none.</summary>
     private static ResolvedToken? Token(HttpRequestData req, JsonElement? body)
     {
         var explicitToken = (body is { } b ? Get(b, "token") : null) ?? GetQuery(req, "token");
         if (!string.IsNullOrWhiteSpace(explicitToken))
         {
             return new ResolvedToken(explicitToken.Trim(), TokenSource.Argument);
+        }
+
+        if (req.Headers.TryGetValues("Authorization", out var auth)
+            && DmcaTokenResolver.BearerToken(auth.FirstOrDefault()) is { } bearer)
+        {
+            return new ResolvedToken(bearer, TokenSource.Header);
         }
 
         foreach (var name in new[] { DmcaTokenResolver.TokenHeaderName, "Token" })

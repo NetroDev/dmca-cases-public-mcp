@@ -23,8 +23,9 @@ Maintained as **DMCA MCP Cases**.
 
 Auth: every tool except `login` sends the caller's own DMCA API token as HTTP header `Token`:
 
-1. the tool's optional `token` argument, or
-2. the token from this caller's successful `login` in the same MCP session (stdio: the process; remote: the MCP session id, kept in server memory for up to 12 hours, max 1000 sessions).
+1. the tool's optional `token` argument;
+2. remote only: an `Authorization: Bearer <token>` or `X-DMCA-Token: <token>` header on the MCP HTTP request (set it once in your MCP client config);
+3. the token from this caller's successful `login` in the same MCP session (stdio: the process; remote: the MCP session id, kept in server memory for up to 12 hours, max 1000 sessions).
 
 There is no shared server token. Without login or `token`, tools fail with "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token." Cases are created and read under the account that logged in. Tokens and passwords are never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
 
