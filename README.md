@@ -24,10 +24,10 @@ Maintained as **DMCA MCP Cases**.
 Auth: every tool except `login` sends the caller's own DMCA API token as HTTP header `Token`:
 
 1. the tool's optional `token` argument;
-2. remote only: an `Authorization: Bearer <token>` or `X-DMCA-Token: <token>` header on the MCP HTTP request (set it once in your MCP client config);
+2. remote only: a header on the MCP HTTP request (set it once in your MCP client config): `Authorization: Bearer <token>` (a bare `Authorization: <token>` works too), `X-DMCA-Token: <token>`, or `Token: <token>` (the header name the DMCA.com API page uses);
 3. the token from this caller's successful `login` in the same MCP session (stdio: the process; remote: the MCP session id, kept in server memory for up to 12 hours, max 1000 sessions).
 
-There is no shared server token. Without login or `token`, tools fail with "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token." Cases are created and read under the account that logged in. Tokens and passwords are never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
+Tokens are the same ones the DMCA.com API page describes (the string returned by `POST /login`); surrounding quotes and whitespace are ignored. There is no shared server token. Without login or `token`, tools fail with "Not logged in. Call the login tool with your DMCA.com email and password first, or pass token." Cases are created and read under the account that logged in. Tokens and passwords are never logged. Response bodies are returned as upstream JSON — no invented schemas or status enums.
 
 `updateCase` leaves status and priority unchanged unless you pass them (the upstream API clears them when they are omitted, so the server re-sends the current values). List tools return `{"cases": [], "count": 0, ...}` when the upstream API reports no cases (it answers `/listDIYCases` with an empty HTTP 404).
 

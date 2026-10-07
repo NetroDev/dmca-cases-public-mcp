@@ -8,7 +8,7 @@ namespace DmcaCasesMcp.Functions;
 /// MCP tool triggers — exposed at /runtime/webhooks/mcp (Streamable HTTP)
 /// via Microsoft.Azure.Functions.Worker.Extensions.Mcp.
 /// Every tool that calls the DMCA API uses the caller's own token (see <see cref="DmcaTokenResolver"/>):
-/// the `token` argument, else an Authorization: Bearer / X-DMCA-Token request header, else the token
+/// the `token` argument, else an Authorization: Bearer / X-DMCA-Token / Token request header, else the token
 /// from this MCP session's login. Without any of them the tool returns a "Not logged in" error. Passwords and tokens are never logged.
 /// </summary>
 public sealed class CaseTools

@@ -93,7 +93,8 @@ public sealed class SessionTokenCache
 /// <summary>
 /// Resolves the DMCA API token for a tool call. Only the caller's own token is used:
 ///   1. the tool's optional <c>token</c> argument,
-///   2. a token on the MCP HTTP request: <c>Authorization: Bearer &lt;token&gt;</c> or <c>X-DMCA-Token</c>
+///   2. a token on the MCP HTTP request: <c>Authorization: Bearer &lt;token&gt;</c> (or a bare token),
+///      <c>X-DMCA-Token</c>, or <c>Token</c>
 ///      (the Functions MCP extension passes request headers through to the tool context),
 ///   3. a token remembered from this MCP session's successful <c>login</c> call.
 /// There is no server-wide fallback token. Token values are never logged.
@@ -127,9 +128,9 @@ public sealed class DmcaTokenResolver
 
     public ResolvedToken? Resolve(ToolInvocationContext? context, string? tokenArgument)
     {
-        if (!string.IsNullOrWhiteSpace(tokenArgument))
+        if (NormalizeToken(tokenArgument) is { } argument)
         {
-            return new ResolvedToken(tokenArgument.Trim(), TokenSource.Argument);
+            return new ResolvedToken(argument, TokenSource.Argument);
         }
 
         var header = GetHeaderToken(context);
@@ -147,24 +148,68 @@ public sealed class DmcaTokenResolver
         return null;
     }
 
-    /// <summary><c>Authorization: Bearer</c> or <c>X-DMCA-Token</c> header on the MCP request, if any.</summary>
+    /// <summary>
+    /// Token from the MCP request headers, if any: <c>Authorization</c> (Bearer/Token scheme, or a bare
+    /// token), else <c>X-DMCA-Token</c>, else <c>Token</c> (the header name the DMCA.com API page documents).
+    /// </summary>
     public static string? GetHeaderToken(ToolInvocationContext? context)
     {
         if (context?.Transport is not HttpTransport http) return null;
-        return BearerToken(http.Headers.TryGetValue("Authorization", out var auth) ? auth : null)
-            ?? NonBlank(http.Headers.TryGetValue(TokenHeaderName, out var direct) ? direct : null);
+        return AuthorizationToken(HeaderValue(http.Headers, "Authorization"))
+            ?? NormalizeToken(HeaderValue(http.Headers, TokenHeaderName))
+            ?? NormalizeToken(HeaderValue(http.Headers, DmcaTokenHeaderName));
     }
 
-    /// <summary>The token from an <c>Authorization: Bearer ...</c> value; other schemes are ignored.</summary>
-    public static string? BearerToken(string? authorization)
+    /// <summary>The DMCA.com API's own header name for the token.</summary>
+    public const string DmcaTokenHeaderName = "Token";
+
+    private static string? HeaderValue(IReadOnlyDictionary<string, string> headers, string name)
     {
-        const string scheme = "Bearer ";
-        var value = authorization?.TrimStart();
-        if (value is null || !value.StartsWith(scheme, StringComparison.OrdinalIgnoreCase)) return null;
-        return NonBlank(value[scheme.Length..]);
+        if (headers.TryGetValue(name, out var exact)) return exact;
+        foreach (var pair in headers)
+        {
+            if (string.Equals(pair.Key, name, StringComparison.OrdinalIgnoreCase)) return pair.Value;
+        }
+
+        return null;
     }
 
-    private static string? NonBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    /// <summary>
+    /// Token from an <c>Authorization</c> value: <c>Bearer &lt;token&gt;</c> or <c>Token &lt;token&gt;</c>
+    /// (any case), or a bare token with no scheme. Other schemes (e.g. Basic) are ignored.
+    /// </summary>
+    public static string? AuthorizationToken(string? authorization)
+    {
+        var value = authorization?.Trim();
+        if (string.IsNullOrEmpty(value)) return null;
+        foreach (var scheme in new[] { "Bearer ", "Token " })
+        {
+            if (value.StartsWith(scheme, StringComparison.OrdinalIgnoreCase))
+            {
+                return NormalizeToken(value[scheme.Length..]);
+            }
+        }
+
+        // No scheme: accept a bare token, but not "<scheme> <credentials>" for some other scheme.
+        return value.Any(char.IsWhiteSpace) ? null : NormalizeToken(value);
+    }
+
+    /// <summary>
+    /// Trim whitespace and one pair of surrounding quotes. The /login response is a JSON string, so
+    /// people often paste the token with its quotes; DMCA tokens are base64 and never contain quotes.
+    /// </summary>
+    public static string? NormalizeToken(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var value = raw.Trim();
+        if (value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        {
+            value = value[1..^1].Trim();
+        }
+
+        return value.Length == 0 ? null : value;
+    }
 
     /// <summary>Remember a login token for this MCP session. Returns false when there is no session id to key on.</summary>
     public bool RememberForSession(ToolInvocationContext? context, string token)

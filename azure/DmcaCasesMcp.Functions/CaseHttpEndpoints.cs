@@ -232,23 +232,23 @@ public sealed class CaseHttpEndpoints
     private static ResolvedToken? Token(HttpRequestData req, JsonElement? body)
     {
         var explicitToken = (body is { } b ? Get(b, "token") : null) ?? GetQuery(req, "token");
-        if (!string.IsNullOrWhiteSpace(explicitToken))
+        if (DmcaTokenResolver.NormalizeToken(explicitToken) is { } argument)
         {
-            return new ResolvedToken(explicitToken.Trim(), TokenSource.Argument);
+            return new ResolvedToken(argument, TokenSource.Argument);
         }
 
         if (req.Headers.TryGetValues("Authorization", out var auth)
-            && DmcaTokenResolver.BearerToken(auth.FirstOrDefault()) is { } bearer)
+            && DmcaTokenResolver.AuthorizationToken(auth.FirstOrDefault()) is { } bearer)
         {
             return new ResolvedToken(bearer, TokenSource.Header);
         }
 
-        foreach (var name in new[] { DmcaTokenResolver.TokenHeaderName, "Token" })
+        foreach (var name in new[] { DmcaTokenResolver.TokenHeaderName, DmcaTokenResolver.DmcaTokenHeaderName })
         {
-            if (req.Headers.TryGetValues(name, out var values))
+            if (req.Headers.TryGetValues(name, out var values)
+                && DmcaTokenResolver.NormalizeToken(values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))) is { } value)
             {
-                var value = values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-                if (value is not null) return new ResolvedToken(value.Trim(), TokenSource.Header);
+                return new ResolvedToken(value, TokenSource.Header);
             }
         }
 

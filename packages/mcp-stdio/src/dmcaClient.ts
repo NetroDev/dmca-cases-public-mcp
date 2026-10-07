@@ -40,8 +40,22 @@ function getSessionToken(): string | undefined {
  * Resolve the caller's own token: the explicit `token` argument, else the token from this
  * session's login. There is no environment or shared fallback. Never log the value.
  */
+/**
+ * Trim whitespace and one pair of surrounding quotes. /login returns a JSON string, so a pasted
+ * token often still has its quotes; DMCA tokens are base64 and never contain quotes.
+ */
+export function normalizeToken(raw?: string): string | undefined {
+  let value = raw?.trim();
+  if (!value) return undefined;
+  if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+    value = value.slice(1, -1).trim();
+  }
+  return value || undefined;
+}
+
 export function resolveToken(explicit?: string): ResolvedToken {
-  if (explicit && explicit.trim()) return { value: explicit.trim(), source: "argument" };
+  const argument = normalizeToken(explicit);
+  if (argument) return { value: argument, source: "argument" };
   const session = getSessionToken();
   if (session) return { value: session, source: "session" };
   throw Object.assign(new Error(NOT_LOGGED_IN), { status: 401 });

@@ -9,7 +9,7 @@
 ## Tokens
 
 Each tool call uses the caller's own token: the `token` argument, else an `Authorization: Bearer`
-or `X-DMCA-Token` header on the MCP request, else the token from this MCP session's `login` (in-memory cache keyed by the MCP session id, 12 h TTL, max 1000 entries, per
+(or bare `Authorization: <token>`), `X-DMCA-Token` or `Token` header on the MCP request, else the token from this MCP session's `login` (in-memory cache keyed by the MCP session id, 12 h TTL, max 1000 entries, per
 instance). With neither, the tool returns `{"error": "Not logged in. ...", "status": 401}`. The HTTP mirrors
 take `token` (query/body) or the `Authorization: Bearer` / `X-DMCA-Token` / `Token` header. With more than one instance a
 session can land on an instance that did not see its `login`; the tool then says "Not logged in" and
