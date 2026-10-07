@@ -144,6 +144,12 @@
     .nav { display: flex; gap: 1.05rem; flex-wrap: wrap; font-size: 0.9rem; }
     .nav a { color: var(--muted); }
     .nav a:hover { color: var(--text); text-decoration: none; }
+    .nav { align-items: center; }
+    .nav .account { display: inline-flex; align-items: center; border: 1px solid rgba(104,184,64,0.45); border-radius: 999px; overflow: hidden; font-size: 0.82rem; }
+    .nav .account a { color: var(--text); padding: 0.28rem 0.7rem; }
+    .nav .account a:hover { background: rgba(104,184,64,0.15); }
+    .nav .account a.join { background: var(--green); color: #061208; font-weight: 600; }
+    .nav .account a.join:hover { background: var(--green-dim); color: #fff; }
 
     .badge-beta {
       display: inline-flex; align-items: center;
@@ -321,6 +327,9 @@
           <a href="https://www.dmca.com/api/">API</a>
           <a href="https://www.dmca.com/Takedowns.aspx">Takedowns</a>
           <a href="https://github.com/NetroDev/dmca-cases-public-mcp">GitHub</a>
+          <span class="account" role="group" aria-label="DMCA.com account">
+            <a href="https://www.dmca.com/users/login.aspx" rel="noopener">Log in</a><a class="join" href="https://www.dmca.com/Toolkit/Signup2.aspx?r=mcp" rel="noopener">Register</a>
+          </span>
         </nav>
       </header>
 
