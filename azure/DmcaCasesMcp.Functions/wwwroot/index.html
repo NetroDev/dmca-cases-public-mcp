@@ -328,7 +328,7 @@
           <a href="https://www.dmca.com/Takedowns.aspx">Takedowns</a>
           <a href="https://github.com/NetroDev/dmca-cases-public-mcp">GitHub</a>
           <span class="account" role="group" aria-label="DMCA.com account">
-            <a href="https://www.dmca.com/users/login.aspx" rel="noopener">Log in</a><a class="join" href="https://www.dmca.com/Toolkit/Signup2.aspx?r=mcp" rel="noopener">Register</a>
+            <a href="https://www.dmca.com/users/login.aspx" rel="noopener" data-acct="login">Log in</a><a class="join" href="https://www.dmca.com/Toolkit/Signup2.aspx?r=mcp" rel="noopener" data-acct="register">Register</a>
           </span>
         </nav>
       </header>
@@ -412,5 +412,30 @@
       </footer>
     </div>
   </div>
+  <script>
+  /* Log in / Register: opens the DMCA.com account modal in place (loaded on first use: /account-modal.js + .css). */
+  (function () {
+    var V = '20261007a', p = null;
+    function load() {
+      if (p) { return p; }
+      p = new Promise(function (resolve, reject) {
+        var n = 2, done = function () { if (--n === 0) { resolve(); } };
+        var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/account-modal.css?v=' + V; l.onload = done; l.onerror = reject; document.head.appendChild(l);
+        var s = document.createElement('script'); s.src = '/account-modal.js?v=' + V; s.async = true; s.onload = done; s.onerror = reject; document.head.appendChild(s);
+      });
+      p.catch(function () { p = null; });
+      return p;
+    }
+    function opener(e) { return e.target && e.target.closest ? e.target.closest('[data-acct]') : null; }
+    document.addEventListener('click', function (e) {
+      var a = opener(e);
+      if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button) { return; }
+      e.preventDefault();
+      load().then(function () { window.DMCAAccount.open(a.getAttribute('data-acct')); }, function () { window.location.href = a.href; });
+    });
+    ['mouseover', 'focusin', 'touchstart'].forEach(function (t) { document.addEventListener(t, function (e) { if (opener(e)) { load(); } }, { passive: true }); });
+    try { if (window.sessionStorage.getItem('dmcaMcpToken')) { load(); } } catch (e) { }
+  })();
+  </script>
 </body>
 </html>

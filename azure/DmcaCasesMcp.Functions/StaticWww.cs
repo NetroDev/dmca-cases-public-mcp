@@ -4,7 +4,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DmcaCasesMcp.Functions;
 
-/// <summary>Serves brand logo and favicon assets from wwwroot.</summary>
+/// <summary>Serves brand logo, favicon and account-modal assets from wwwroot.</summary>
 public sealed class StaticWww
 {
     [Function("DmcaLogoSvg")]
@@ -37,6 +37,19 @@ public sealed class StaticWww
         CancellationToken ct)
         => Serve(req, "apple-touch-icon.png", "image/png", ct);
 
+    // Landing-page account modal (log in / register / upgrade), lazy-loaded when the header pill is clicked.
+    [Function("AccountModalJs")]
+    public Task<HttpResponseData> AccountModalJs(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "account-modal.js")] HttpRequestData req,
+        CancellationToken ct)
+        => Serve(req, "account-modal.js", "text/javascript; charset=utf-8", ct);
+
+    [Function("AccountModalCss")]
+    public Task<HttpResponseData> AccountModalCss(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "account-modal.css")] HttpRequestData req,
+        CancellationToken ct)
+        => Serve(req, "account-modal.css", "text/css; charset=utf-8", ct);
+
     private static async Task<HttpResponseData> Serve(HttpRequestData req, string file, string contentType, CancellationToken ct)
     {
         var candidates = new[]
@@ -56,6 +69,7 @@ public sealed class StaticWww
         var res = req.CreateResponse(HttpStatusCode.OK);
         res.Headers.Add("Content-Type", contentType);
         res.Headers.Add("Cache-Control", "public, max-age=86400");
+        res.Headers.Add("X-Content-Type-Options", "nosniff");
         await res.Body.WriteAsync(bytes, ct).ConfigureAwait(false);
         return res;
     }
